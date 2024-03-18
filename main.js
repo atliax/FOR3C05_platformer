@@ -67,7 +67,13 @@ const hero =
             hero.y_coord = canvas.height - hero.height
             hero.jumping = false
         }
-    }
+    },
+    shoot()
+    {
+        const bullet_speed = -5 ;
+        const bullet = new Bullet(this.x_coord, this.y_coord+this.height, bullet_speed);
+        enemy_bullet.push(bullet);
+    },
 }
 
 //key virkni sem ég fann á netinu
@@ -100,10 +106,31 @@ function handleKeys()
 
     if(keys[KEY_SPACE] == true)
     {
-        hero.shoot();
+        hero.shoot()
     }
 }
 
+class Bullet 
+{
+    constructor(x, y, speed)
+    {
+        this.x = x;
+        this.y = y;
+        this.speed = speed;
+        this.width = 5
+        this.height = 1
+    }
+
+    draw()
+    {
+        context.fillStyle = "black";
+        this.y += this.speed;
+        
+        context.fillRect(this.x, this.y, this.width, this.height)
+
+        
+    }
+}
 class Goblin
 {
     constructor()
@@ -127,26 +154,58 @@ class Goblin
             this.speed *= -1
         }
         context.fillRect(this.x, this.y, this.width, this.height, this.speed)
+    }
+    shoot()
+    {
+        const bullet_speed = 5 ;
+        const bullet = new Bullet(this.x, this.y+this.height, bullet_speed);
+        enemy_bullet.push(bullet);
+    }
+
+}
+enemy_bullet = [];
+
+function draw_enemies()
+{
+    for (let i = 0; i < enemies.length; i++)
+    {
+        enemies[i].draw()
+        enemies[i].shoot()
+    }
+}
+
+function enemies_shoot()
+{
+    for (let i = 0; i < enemies.length; i++)
+    {
         
+
     }
 }
 
 function draw_game()
 {
+   
     context.clearRect(0,0, canvas.width, canvas.height);
-
     context.fillStyle = "white";
     context.fillRect(0,0, canvas.width, canvas.height );
+    handleKeys()
     hero.draw()
-    for (let i = 0; i < enemies.length; i++)
-    {
-        enemies[i].draw()
+    draw_enemies()
+    enemies_shoot()
+    for (let i = 0; i < enemy_bullet.length; i++) {
+        enemy_bullet[i].draw();
     }
+
+
+
     requestAnimationFrame(draw_game);
     
 }
+
+//bara til að testa
 enemies.push(new Goblin())
-setInterval(handleKeys, requestAnimationFrame)
+
 requestAnimationFrame(draw_game);
 
 
