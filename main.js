@@ -36,44 +36,55 @@ const keys = []
 
 const enemies = []
 
+const enemy_bullet = [];
+const hero_bullet = [];
+
 const hero =  
 {
-    x_coord: canvas.width/2.3,
+    x: canvas.width/2.3,
     height: 100,
-    y_coord: canvas.height - 100, 
+    y: canvas.height - 100, 
     width: 80,
     speed: 5,
     velocityX: 0,
     velocityY: 0,
     jumping: false,
+    shootDelay: 600,
+    lastshotTime: 0,
+
     draw()
     {
         context.fillStyle = "blue";
-        context.fillRect(hero.x_coord, hero.y_coord, hero.width, hero.height);
+        context.fillRect(hero.x, hero.y, hero.width, hero.height);
         hero.velocityX *= 0.9;
         hero.velocityY += 0.5;
-        hero.x_coord += hero.velocityX;
-        hero.y_coord += hero.velocityY;
-        if (hero.x_coord >= canvas.width - hero.width)
+        hero.x += hero.velocityX;
+        hero.y += hero.velocityY;
+        if (hero.x >= canvas.width - hero.width)
         {
-            hero.x_coord =  0
-        }   else if (hero.x_coord <= 0) 
+            hero.x =  0
+        }   else if (hero.x <= 0) 
         {
-            hero.x_coord = canvas.width-hero.width
+            hero.x = canvas.width-hero.width
         }
     
-        if (hero.y_coord >= canvas.height - hero.height)
+        if (hero.y >= canvas.height - hero.height)
         {
-            hero.y_coord = canvas.height - hero.height
+            hero.y = canvas.height - hero.height
             hero.jumping = false
         }
     },
-    shoot()
+    shoot(){
+    const currentTime = new Date().getTime();
+    if (currentTime - hero.lastshotTime > hero.shootDelay)
+
     {
         const bullet_speed = -5 ;
-        const bullet = new Bullet(this.x_coord, this.y_coord+this.height, bullet_speed);
-        enemy_bullet.push(bullet);
-    },
+        const bullet = new Bullet(hero.x+(hero.width*0.5), hero.y+hero.height, bullet_speed);
+        hero_bullet.push(bullet);
+        hero.lastshotTime  =currentTime
+    }
+    }
 }
 
 //key virkni sem ég fann á netinu
@@ -110,6 +121,52 @@ function handleKeys()
     }
 }
 
+function check_collision(bullet, object)
+{
+    let bulletleft = bullet.x;
+    let bulletright = bullet.x + bullet.width;
+    let bullettop = bullet.y - bullet.height;
+    let bulletbot = bullet.y;
+
+    let objectleft = object.x;
+    let objectright = object.x + object.width;
+    let objecttop = object.y - object.height;
+    let objectbot = object.y;
+
+    if (bulletright > objectleft && 
+        bulletleft < objectright &&
+        bulletbot > objecttop && 
+        bullettop < objectbot)
+        {return true}
+
+    return false
+}
+
+function collision_consequence()
+{
+    for (let i= 0; i < hero_bullet.length; i++)
+    {
+        for (let j = 0; j < enemies.length; j++)
+        {
+            if (check_collision(hero_bullet[i], enemies[j]))
+            {
+                hero_bullet.splice(i, 1);
+                enemies.splice(j, 1);
+                
+            }
+        }
+    }
+    for (let i= 0; i < hero_bullet.length; i++)
+    {
+        if (check_collision(enemy_bullet[i], hero))
+        {
+            enemy_bullet.splice(i, 1);
+            console.log("hero dead")
+        }  
+    }
+}
+
+
 class Bullet 
 {
     constructor(x, y, speed)
@@ -117,8 +174,8 @@ class Bullet
         this.x = x;
         this.y = y;
         this.speed = speed;
-        this.width = 5
-        this.height = 1
+        this.width = 10
+        this.height = 10
     }
 
     draw()
@@ -137,9 +194,11 @@ class Goblin
     {
         this.x = Math.random()*15
         this.y = 60
-        this.width = 40
+        this.width = 200
         this.height = 35
         this.speed = 2
+        this.lastshotTime = 0
+        this.shootDelay = 1000
     }
     draw()
     {
@@ -157,13 +216,17 @@ class Goblin
     }
     shoot()
     {
-        const bullet_speed = 5 ;
-        const bullet = new Bullet(this.x, this.y+this.height, bullet_speed);
-        enemy_bullet.push(bullet);
+        const currentTime = new Date().getTime();
+        if (currentTime - this.lastshotTime > this.shootDelay)
+        {
+            const bullet_speed = 5 ;
+            const bullet = new Bullet(this.x, this.y+this.height, bullet_speed);
+            enemy_bullet.push(bullet);
+            this.lastshotTime  =currentTime
+        }
     }
 
 }
-enemy_bullet = [];
 
 function draw_enemies()
 {
@@ -178,7 +241,12 @@ function enemies_shoot()
 {
     for (let i = 0; i < enemies.length; i++)
     {
-        
+        for (let i = 0; i < enemy_bullet.length; i++) {
+            enemy_bullet[i].draw();
+        }  
+        for (let i = 0; i < hero_bullet.length; i++) {
+            hero_bullet[i].draw();
+        }        
 
     }
 }
@@ -193,9 +261,8 @@ function draw_game()
     hero.draw()
     draw_enemies()
     enemies_shoot()
-    for (let i = 0; i < enemy_bullet.length; i++) {
-        enemy_bullet[i].draw();
-    }
+    collision_consequence()
+
 
 
 
