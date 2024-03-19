@@ -130,8 +130,8 @@ function check_collision(bullet, object)
 
     let objectleft = object.x;
     let objectright = object.x + object.width;
-    let objecttop = object.y - object.height;
-    let objectbot = object.y;
+    let objecttop = object.y;
+    let objectbot = object.y + object.height;
 
     if (bulletright > objectleft && 
         bulletleft < objectright &&
@@ -152,11 +152,10 @@ function collision_consequence()
             {
                 hero_bullet.splice(i, 1);
                 enemies.splice(j, 1);
-                
             }
         }
     }
-    for (let i= 0; i < hero_bullet.length; i++)
+    for (let i= 0; i < enemy_bullet.length; i++)
     {
         if (check_collision(enemy_bullet[i], hero))
         {
