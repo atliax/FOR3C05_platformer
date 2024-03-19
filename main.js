@@ -60,10 +60,10 @@ const hero =
         hero.velocityY += 0.5;
         hero.x += hero.velocityX;
         hero.y += hero.velocityY;
-        if (hero.x >= canvas.width - hero.width)
+        if (hero.x >= canvas.width)
         {
             hero.x =  0
-        }   else if (hero.x <= 0) 
+        }   else if (hero.x <= 0-hero.width) 
         {
             hero.x = canvas.width-hero.width
         }
