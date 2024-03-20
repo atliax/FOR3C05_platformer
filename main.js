@@ -326,11 +326,16 @@ function bullets_draw()
     }
 }
 
-function draw_game()
+function draw_background()
 {
     context.clearRect(0,0, canvas.width, canvas.height);
     context.fillStyle = "white";
     context.fillRect(0,0, canvas.width, canvas.height );
+}
+
+function draw_game()
+{
+    draw_background();
 
     hero.draw();
     enemies_draw();
