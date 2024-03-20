@@ -326,11 +326,55 @@ function bullets_draw()
     }
 }
 
+const levelWidth = 20;
+const levelHeight = 17;
+const levelScale = 64;
+
+let levelData = [
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+    0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+];
+
 function draw_background()
 {
     context.clearRect(0,0, canvas.width, canvas.height);
-    context.fillStyle = "white";
-    context.fillRect(0,0, canvas.width, canvas.height );
+
+    for(let y = 0; y < levelHeight; y++)
+    {
+        for(let x = 0; x < levelWidth; x++)
+        {
+            let index = (y * levelWidth) + x;
+
+            if(levelData[index] == 1)
+            {
+                context.fillStyle = "black";
+            }
+            else if(levelData[index] == 2)
+            {
+                context.fillStyle = "green";
+            }
+            else
+            {
+                context.fillStyle = "white";
+            }
+            context.fillRect(x*levelScale,y*levelScale,levelScale,levelScale);
+        }
+    }
 }
 
 function draw_game()
