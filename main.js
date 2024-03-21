@@ -11,6 +11,9 @@ const KEY_SPACE = 32;
 document.addEventListener("keydown",keydown);
 document.addEventListener("keyup",keyup);
 
+const backgroundImage = new Image()
+backgroundImage.src = "myndir/bar.jpg" // bara placeholder mögulega.
+
 //key virkni sem ég fann á netinu
 function keydown(event)
 {
@@ -54,15 +57,47 @@ function handleKeys()
         hero.shoot();
     }
 }
-
-class Hero  
+class Sprite 
 {
-    constructor()
+    constructor({imageSrc})
     {
-        this.width = 80;
-        this.height = 100;
-        this.x = canvas.width/2.3;
-        this.y = canvas.height - this.height;
+        this.x = 0;
+        this.y = 0;
+        this.image = new Image()
+
+        this.image.onload = () => 
+        {
+            this.width = this.image.width
+            this.height = this.image.height
+        }
+        this.image.src = imageSrc
+    }
+
+    draw() 
+    {
+        //context.fillStyle = "255, 0, 0, 0.2"
+        //context.fillRect(this.x, this.y, this.width, this.height)
+        if (!this.image) return
+        context.drawImage(
+            this.image, 
+            this.x, 
+            this.y
+            );
+        
+    }
+    
+}
+
+class Hero extends Sprite
+{
+
+    constructor(imageSrc)
+    {
+        super({imageSrc});
+        //this.width = 80;
+        //this.height = 100;
+        //this.x = canvas.width/2.3;
+        //this.y = canvas.height - this.height;
         this.speed = 5;
         this.velocityX = 0;
         this.velocityY = 0;
@@ -109,11 +144,11 @@ class Hero
         }
     }
 
-    draw()
+    /*draw()
     {
         context.fillStyle = "blue";
         context.fillRect(this.x, this.y, this.width, this.height);
-    }
+    }*/
 
     shoot()
     {
@@ -170,7 +205,7 @@ class Goblin
         this.height = 35;
         this.speed = 2;
         this.lastshotTime = 0;
-        this.shootDelay = 1000;
+        this.shootDelay = 10000;
     }
 
     move()
@@ -353,26 +388,18 @@ let levelData = [
 function draw_background()
 {
     context.clearRect(0,0, canvas.width, canvas.height);
-
+    context.drawImage(backgroundImage, 0,0 , canvas.width, canvas.height);
     for(let y = 0; y < levelHeight; y++)
     {
         for(let x = 0; x < levelWidth; x++)
         {
             let index = (y * levelWidth) + x;
 
-            if(levelData[index] == 1)
-            {
-                context.fillStyle = "black";
-            }
-            else if(levelData[index] == 2)
-            {
-                context.fillStyle = "green";
-            }
-            else
+            if(levelData[index] != 0)
             {
                 context.fillStyle = "white";
+                context.fillRect(x*levelScale,y*levelScale,levelScale,levelScale);
             }
-            context.fillRect(x*levelScale,y*levelScale,levelScale,levelScale);
         }
     }
 }
@@ -411,7 +438,7 @@ const enemies = [];
 const enemy_bullet = [];
 const hero_bullet = [];
 
-const hero = new Hero();
+const hero = new Hero("myndir/Sprite_smallwalk.png");
 
 //bara til að testa
 enemies.push(new Goblin());
