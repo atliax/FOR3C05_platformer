@@ -12,7 +12,8 @@ document.addEventListener("keydown",keydown);
 document.addEventListener("keyup",keyup);
 
 const backgroundImage = new Image()
-backgroundImage.src = "myndir/bar.jpg" // bara placeholder mögulega.
+
+backgroundImage.src = "myndir/bar.jpg" // bara placeholder mögulega
 
 //key virkni sem ég fann á netinu
 function keydown(event)
@@ -59,31 +60,62 @@ function handleKeys()
 }
 class Sprite 
 {
-    constructor({imageSrc})
+    constructor({imageSrc, frameRate = 1, frameBuffer = 4, scale = 1})
     {
-        this.x = 0;
-        this.y = 0;
+        this.x = canvas.width / 10;
+        this.y = canvas.height;
+        this.scale = scale
         this.image = new Image()
 
         this.image.onload = () => 
         {
-            this.width = this.image.width
-            this.height = this.image.height
+            this.width = (this.image.width / this.frameRate) * this.scale
+            this.height = (this.image.height) * this.scale
         }
         this.image.src = imageSrc
+        this.frameRate = frameRate
+        this.currentFrame = 0
+        this.frameBuffer =  frameBuffer  // stjórnar hversu hratt sprite-ið skiptir um mynd
+        this.elapsedFrames = 0
     }
 
     draw() 
     {
-        //context.fillStyle = "255, 0, 0, 0.2"
-        //context.fillRect(this.x, this.y, this.width, this.height)
+        context.fillStyle = "255, 31, 0, 0.2"
+        context.fillRect(this.x, this.y, this.width, this.height)
         if (!this.image) return
+
+        const cropbox = 
+        {
+            x: this.currentFrame* this.image.width / this.frameRate,
+            y: 0,
+            width: this.image.width / 10,  
+            height: this.image.height,
+        }
         context.drawImage(
-            this.image, 
+            this.image,
+            cropbox.x,
+            cropbox.y,
+            cropbox.width,
+            cropbox.height,
             this.x, 
-            this.y
+            this.y,
+            this.width ,
+            this.height,
             );
+            this.animation()
         
+    }
+    
+    animation()
+    {
+        this.elapsedFrames++
+
+        if(this.elapsedFrames % this.frameBuffer === 0)
+        {
+        if(this.currentFrame < this.frameRate - 1) this.currentFrame++
+        else this.currentFrame = 0
+    }
     }
     
 }
@@ -91,13 +123,14 @@ class Sprite
 class Hero extends Sprite
 {
 
-    constructor(imageSrc)
+    constructor(imageSrc, frameRate, scale = 2)
     {
-        super({imageSrc});
+        super({imageSrc, frameRate, scale });
         //this.width = 80;
         //this.height = 100;
         //this.x = canvas.width/2.3;
         //this.y = canvas.height - this.height;
+
         this.speed = 5;
         this.velocityX = 0;
         this.velocityY = 0;
@@ -105,6 +138,7 @@ class Hero extends Sprite
         this.shootDelay = 600;
         this.lastshotTime = 0;
     }
+
 
     move(speedchange)
     {
@@ -142,6 +176,7 @@ class Hero extends Sprite
             this.y = canvas.height - this.height;
             this.jumping = false;
         }
+        
     }
 
     /*draw()
@@ -414,8 +449,15 @@ function draw_game()
     bullets_draw();
 }
 
-function main_loop()
+//maxFPS = hve hraður leikurinn er. 
+var lastTimestamp = 0, maxFPS = 60, timestep = 1000 / maxFPS;
+
+function main_loop(timestamp)
 {
+    window.requestAnimationFrame(main_loop);  
+    if (timestamp - lastTimestamp  < timestep) return;
+
+    lastTimestamp =  timestamp
     handleKeys();
 
     hero.move();
@@ -427,8 +469,6 @@ function main_loop()
     collision_consequence();
 
     draw_game();
-
-    requestAnimationFrame(main_loop);    
 }
 
 const keys = [];
@@ -438,7 +478,7 @@ const enemies = [];
 const enemy_bullet = [];
 const hero_bullet = [];
 
-const hero = new Hero("myndir/Sprite_smallwalk.png");
+const hero = new Hero("myndir/Run.png", 10 );
 
 //bara til að testa
 enemies.push(new Goblin());
