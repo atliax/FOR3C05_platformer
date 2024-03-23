@@ -13,7 +13,7 @@ document.addEventListener("keyup",keyup);
 
 const backgroundImage = new Image()
 
-backgroundImage.src = "myndir/bar.jpg" // bara placeholder mögulega
+backgroundImage.src = "Myndir/Bar.jpg" // bara placeholder mögulega
 
 //key virkni sem ég fann á netinu
 function keydown(event)
@@ -331,7 +331,7 @@ class Goblin extends Sprite
         if (currentTime - this.lastshotTime > this.shootDelay)
         {
             const bullet_speed = 5;
-            const bullet = new Bullet("myndir/enemyBullets.png", 4,  this.x, this.y+this.height, bullet_speed);
+            const bullet = new Bullet("Myndir/enemyBullets.png", 4,  this.x, this.y+this.height, bullet_speed);
             enemy_bullet.push(bullet);
             this.lastshotTime = currentTime;
         }
@@ -544,7 +544,7 @@ const enemy_bullet = [];
 const hero_bullet = [];
 
 
-const hero = new Hero("myndir/idleLeft.png", 2, animations = {
+const hero = new Hero("Myndir/idleLeft.png", 2, animations = {
     idleLeft: {imageSrc: "Myndir/idleLeft.png", frameRate: 2},
     idleRight: {imageSrc: "Myndir/idleRight.png", frameRate: 2},
     walkRight: {imageSrc: "Myndir/walkRight.png", frameRate: 4},
@@ -553,9 +553,9 @@ const hero = new Hero("myndir/idleLeft.png", 2, animations = {
 } );
 
 //bara til að testa
-enemies.push(new Goblin("myndir/EnemyP1.png", 1, animations = {
-    fullHealth: {imageSrc: "myndir/EnemyP1.png",frameRate: 1},
-    halfHealth: {imageSrc: "myndir/EnemyP2.png",frameRate: 1},
+enemies.push(new Goblin("Myndir/EnemyP1.png", 1, animations = {
+    fullHealth: {imageSrc: "Myndir/EnemyP1.png",frameRate: 1},
+    halfHealth: {imageSrc: "Myndir/EnemyP2.png",frameRate: 1},
 }));
 
 requestAnimationFrame(main_loop);
