@@ -648,7 +648,7 @@ function draw_game()
     context.fillStyle = "white";
     context.fillText(locString,100,10);
 
-    let velString = "".concat("velX:",hero.velocityX.toString(),", velY:",hero.velocityY.toString());
+    let velString = "".concat("velX:",(hero.velocityX*frameTimeDelta).toString(),", velY:",(hero.velocityY*frameTimeDelta).toString());
     context.fillStyle = "white";
     context.fillText(velString,100,20);
 
