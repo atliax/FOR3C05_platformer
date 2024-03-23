@@ -7,7 +7,7 @@ const KEY_RIGHT = 39;
 const KEY_UP = 38;
 const KEY_DOWN = 40;
 const KEY_SPACE = 32;
-
+let lastKeyUpCode = null
 document.addEventListener("keydown",keydown);
 document.addEventListener("keyup",keyup);
 
@@ -32,6 +32,7 @@ function keyup(event)
        event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE)
     {
         keys[event.keyCode] = false;
+        lastKeyUpCode = event.keyCode;
     }
 }
 
@@ -41,11 +42,13 @@ function handleKeys()
     if(keys[KEY_LEFT] == true)
     {
         hero.move(-hero.speed);
+        hero.switchSprite("walkLeft")
     }
 
     if(keys[KEY_RIGHT] == true)
     {
         hero.move(hero.speed);
+        hero.switchSprite("walkRight")
     }
 
     if(keys[KEY_UP] == true)
@@ -56,24 +59,43 @@ function handleKeys()
     if(keys[KEY_SPACE] == true)
     {
         hero.shoot();
+        hero.switchSprite("shoot")
     }
+    
+    if (!keys[KEY_LEFT] && !keys[KEY_RIGHT] && !keys[KEY_UP] && !keys[KEY_SPACE])
+    {
+        if (lastKeyUpCode == KEY_LEFT)
+        {
+        hero.switchSprite("idleLeft")
+        }
+        if (lastKeyUpCode == KEY_RIGHT)
+        {
+        hero.switchSprite("idleRight")
+        }
+        if (lastKeyUpCode == KEY_SPACE)
+        {
+        hero.switchSprite("idleRight")
+        }
+    }
+    
 }
 class Sprite 
 {
-    constructor({imageSrc, frameRate = 1, frameBuffer = 4, scale = 1})
+    constructor({imageSrc, frameRate, frameBuffer = 4, scale = 1})
     {
-        this.x = canvas.width / 10;
+        this.x = canvas.width/ 2.3;
         this.y = canvas.height;
         this.scale = scale
         this.image = new Image()
+        this.frameRate = frameRate
 
         this.image.onload = () => 
         {
-            this.width = (this.image.width / this.frameRate) * this.scale
+            this.width = (this.image.width / frameRate) * this.scale
             this.height = (this.image.height) * this.scale
         }
         this.image.src = imageSrc
-        this.frameRate = frameRate
+        
         this.currentFrame = 0
         this.frameBuffer =  frameBuffer  // stjórnar hversu hratt sprite-ið skiptir um mynd
         this.elapsedFrames = 0
@@ -81,7 +103,7 @@ class Sprite
 
     draw() 
     {
-        context.fillStyle = "255, 31, 0, 0.2"
+        context.fillStyle = "tan"
         context.fillRect(this.x, this.y, this.width, this.height)
         if (!this.image) return
 
@@ -89,7 +111,7 @@ class Sprite
         {
             x: this.currentFrame* this.image.width / this.frameRate,
             y: 0,
-            width: this.image.width / 10,  
+            width: this.image.width / this.frameRate,  
             height: this.image.height,
         }
         context.drawImage(
@@ -123,7 +145,7 @@ class Sprite
 class Hero extends Sprite
 {
 
-    constructor(imageSrc, frameRate, scale = 2)
+    constructor(imageSrc, frameRate, animations, scale = 2)
     {
         super({imageSrc, frameRate, scale });
         //this.width = 80;
@@ -137,9 +159,25 @@ class Hero extends Sprite
         this.jumping = false;
         this.shootDelay = 600;
         this.lastshotTime = 0;
+
+        this.animations = animations
+
+        for (let key in this.animations) 
+        {
+            const image = new Image()
+            image.src = this.animations[key].imageSrc
+            this.animations[key].image = image
+        }
+
     }
 
-
+    switchSprite(key) 
+    {
+        if (this.image === this.animations[key].image) return
+        this.image = this.animations[key].image
+        if (this.frameRate === this.animations[key].frameRate) return
+        this.frameRate = this.animations[key].frameRate
+    }
     move(speedchange)
     {
         if(speedchange < 0)
@@ -162,6 +200,7 @@ class Hero extends Sprite
         this.x += this.velocityX;
         this.y += this.velocityY;
 
+
         if (this.x >= canvas.width)
         {
             this.x = 0;
@@ -176,6 +215,7 @@ class Hero extends Sprite
             this.y = canvas.height - this.height;
             this.jumping = false;
         }
+        
         
     }
 
@@ -478,7 +518,14 @@ const enemies = [];
 const enemy_bullet = [];
 const hero_bullet = [];
 
-const hero = new Hero("myndir/Run.png", 10 );
+
+const hero = new Hero("myndir/idleLeft.png", 2, animations = {
+    idleLeft: {imageSrc: "Myndir/idleLeft.png", frameRate: 2},
+    idleRight: {imageSrc: "Myndir/idleRight.png", frameRate: 2},
+    walkRight: {imageSrc: "Myndir/walkRight.png", frameRate: 4},
+    walkLeft: {imageSrc: "Myndir/walkLeft.png", frameRate: 4},
+    shoot: {imageSrc: "Myndir/shoot.png", frameRate: 2},
+} );
 
 //bara til að testa
 enemies.push(new Goblin());
