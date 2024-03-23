@@ -1,5 +1,6 @@
 canvas = document.getElementById('mainCanvas');
 context = canvas.getContext('2d');
+addEventListener("load",initialize);
 
 //key virkni sem ég fann á netinu
 const KEY_LEFT = 37;
@@ -8,12 +9,58 @@ const KEY_UP = 38;
 const KEY_DOWN = 40;
 const KEY_SPACE = 32;
 let lastKeyUpCode = null
-document.addEventListener("keydown",keydown);
-document.addEventListener("keyup",keyup);
 
 const backgroundImage = new Image()
 
-backgroundImage.src = "Myndir/Bar.jpg" // bara placeholder mögulega
+const brickTile = new Image();
+
+const levelWidth = 26;
+const levelHeight = 20;
+const levelScale = 32;
+
+let levelData = [
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+];
+
+//maxFPS = hve hraður leikurinn er. 
+//var lastTimestamp = 0, maxFPS = 60, timestep = 1000 / maxFPS;
+
+const keys = [];
+
+const enemies = [];
+
+const enemy_bullet = [];
+const hero_bullet = [];
+
+let hero;
+
+let startTimestamp;
+let frameTimeLast;
+let frameTimeDelta;
+
+function get_timestamp()
+{
+    return performance.timeOrigin + performance.now();
+}
 
 //key virkni sem ég fann á netinu
 function keydown(event)
@@ -37,17 +84,17 @@ function keyup(event)
 }
 
 //key virkni sem ég fann á netinu
-function handleKeys()
+function handle_keys()
 {
     if(keys[KEY_LEFT] == true)
     {
-        hero.move(-hero.speed);
+        hero.walk(-hero.speed);
         hero.switchSprite("walkLeft")
     }
 
     if(keys[KEY_RIGHT] == true)
     {
-        hero.move(hero.speed);
+        hero.walk(hero.speed);
         hero.switchSprite("walkRight")
     }
 
@@ -155,6 +202,12 @@ class Sprite
     
 }
 
+const GRAVITY = 20;
+const PLAYER_ACCELERATION = 15;
+const PLAYER_MAX_SPEED = 10;
+const PLAYER_GROUND_SPEED_MODIFIER = 10;
+const PLAYER_JUMP_SPEED = 8;
+
 class Hero extends Sprite
 {
 
@@ -166,10 +219,15 @@ class Hero extends Sprite
         //this.x = canvas.width/2.3;
         //this.y = canvas.height - this.height;
 
-        this.speed = 5;
+        this.speed = PLAYER_ACCELERATION;
+
+        this.y = canvas.height - 96;
+        this.groundSpeedModifier = PLAYER_GROUND_SPEED_MODIFIER;
+        this.maxSpeed = PLAYER_MAX_SPEED;
+
         this.velocityX = 0;
         this.velocityY = 0;
-        this.jumping = false;
+        this.onGround = false;
         this.shootDelay = 600;
         this.lastshotTime = 0;
         this.hitpoints = 3
@@ -185,53 +243,93 @@ class Hero extends Sprite
 
     }
 
-
-    move(speedchange)
+    walk(speedchange)
     {
-        if(speedchange < 0)
+        if(this.onGround)
         {
-            if(this.velocityX > speedchange)
+            if(speedchange > 0)
             {
-                this.velocityX--;
+                speedchange += this.groundSpeedModifier;
             }
+            else
+            {
+                speedchange -= this.groundSpeedModifier;
+            }
+        }
+
+        this.velocityX += speedchange * frameTimeDelta;
+
+        if(this.velocityX > this.maxSpeed)
+        {
+            this.velocityX = this.maxSpeed;
+        }
+
+        if(this.velocityX < 0 && this.velocityX < -this.maxSpeed)
+        {
+            this.velocityX = -this.maxSpeed;
+        }
+    }
+
+    move()
+    {
+        let newPosY = this.y + this.velocityY;
+        let newPosX = this.x + this.velocityX;
+
+        this.onGround = false;
+        if(this.velocityY <= 0)
+        {
+            // engir árekstrar á uppleið
         }
         else
         {
-            if(this.velocityX < speedchange)
+            let mapX = Math.floor(newPosX/levelScale);
+            let mapY = Math.floor((newPosY+(2*levelScale))/levelScale);
+            let mapX2 = Math.floor((newPosX+(0.9*levelScale))/levelScale);
+            let mapX3 = Math.floor((newPosX+(1.8*levelScale))/levelScale);
+
+            if(get_map_collision(mapX,mapY) ||
+               get_map_collision(mapX2,mapY) ||
+               get_map_collision(mapX3,mapY))
             {
-                this.velocityX++;
+                newPosY = (Math.floor(newPosY/levelScale))*levelScale;
+                this.velocityY = 0;
+                this.onGround = true;
             }
         }
 
-        this.velocityX *= 0.9;
-        this.velocityY += 0.5;
-        this.x += this.velocityX;
-        this.y += this.velocityY;
+        this.x = newPosX;
+        this.y = newPosY;
 
+        if(this.x > canvas.width)
+        {
+            this.x -= canvas.width+this.width;
+        }
 
-        if (this.x >= canvas.width)
+        if(this.x < (0-this.width))
         {
-            this.x = 0;
+            this.x += canvas.width+this.width;
         }
-        else if (this.x <= 0 - this.width) 
-        {
-            this.x = canvas.width - this.width;
-        }
-    
-        if (this.y >= canvas.height - this.height)
-        {
-            this.y = canvas.height - this.height;
-            this.jumping = false;
-        }
-        
-        
     }
 
-    /*draw()
+    gravity()
     {
-        context.fillStyle = "blue";
-        context.fillRect(this.x, this.y, this.width, this.height);
-    }*/
+        if(!this.onGround)
+        {
+            this.velocityY += GRAVITY * frameTimeDelta;
+        }
+    }
+
+    drag()
+    {
+        if(this.onGround)
+        {
+            this.velocityX = this.velocityX + (-(3*this.velocityX)*frameTimeDelta);
+            if(Math.abs(this.velocityX) < 0.1)
+            {
+                this.velocityX = 0;
+            }
+        }
+    }
 
     shoot()
     {
@@ -247,12 +345,25 @@ class Hero extends Sprite
 
     jump()
     {
-        if(!this.jumping)
+        if(this.velocityY == 0 && this.onGround)
         {
-            this.velocityY = -this.speed * 2;
-            this.jumping = true;
+            this.velocityY = -PLAYER_JUMP_SPEED;
+            this.onGround = false;
         }
     }
+}
+
+function get_map_collision(X,Y)
+{
+    if(X < 0 || X >= levelWidth)
+        return false;
+    if(Y < 0 || Y >= levelHeight)
+        return false;
+
+    if(levelData[Y * levelWidth + X] != 0)
+        return true;
+
+    return false;
 }
 
 class Bullet extends Sprite
@@ -477,30 +588,6 @@ function bullets_draw()
     }
 }
 
-const levelWidth = 20;
-const levelHeight = 17;
-const levelScale = 64;
-
-let levelData = [
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-    0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-];
-
 function draw_background()
 {
     context.clearRect(0,0, canvas.width, canvas.height);
@@ -513,8 +600,7 @@ function draw_background()
 
             if(levelData[index] != 0)
             {
-                context.fillStyle = "white";
-                context.fillRect(x*levelScale,y*levelScale,levelScale,levelScale);
+                context.drawImage(brickTile,x*levelScale,y*levelScale);
             }
         }
     }
@@ -545,21 +631,39 @@ function draw_game()
     enemies_draw();
 
     bullets_draw();
-}
 
-//maxFPS = hve hraður leikurinn er. 
-var lastTimestamp = 0, maxFPS = 60, timestep = 1000 / maxFPS;
+    let locString = "".concat("X:",hero.x.toString(),", Y:",hero.y.toString());
+    context.fillStyle = "white";
+    context.fillText(locString,100,10);
+
+    let velString = "".concat("velX:",hero.velocityX.toString(),", velY:",hero.velocityY.toString());
+    context.fillStyle = "white";
+    context.fillText(velString,100,20);
+
+    context.beginPath();
+    context.fillStyle = "pink";
+    context.arc(hero.x,hero.y,4,0,2*Math.PI);
+    context.fill();
+}
 
 function main_loop(timestamp)
 {
     if (isPlayerdead) return;
     window.requestAnimationFrame(main_loop);  
-    if (timestamp - lastTimestamp  < timestep) return;
+//    if (timestamp - lastTimestamp  < timestep) return;
 
-    lastTimestamp =  timestamp
-    handleKeys();
+//    lastTimestamp =  timestamp
+
+    let frameTimeCurrent = get_timestamp();
+    frameTimeDelta = (frameTimeCurrent - frameTimeLast)/1000;
+    frameTimeLast = frameTimeCurrent;
+
+    handle_keys();
 
     hero.move();
+    hero.gravity();
+    hero.drag();
+
     enemies_move();
     bullets_move();
 
@@ -570,27 +674,32 @@ function main_loop(timestamp)
     draw_game();
 }
 
-const keys = [];
+function initialize()
+{
+    startTimestamp = get_timestamp();
+    frameTimeDelta = 0.017;
+    frameTimeLast = get_timestamp();
+    frameTimeCurrent = get_timestamp();
 
-const enemies = [];
+    backgroundImage.src = "Myndir/Bar.jpg" // bara placeholder mögulega
+    brickTile.src = "Myndir/tileBrick.png";
+    document.addEventListener("keydown",keydown);
+    document.addEventListener("keyup",keyup);
 
-const enemy_bullet = [];
-const hero_bullet = [];
+    hero = new Hero("Myndir/idleLeft.png", 2, animations = {
+        idleLeft: {imageSrc: "Myndir/idleLeft.png", frameRate: 2},
+        idleRight: {imageSrc: "Myndir/idleRight.png", frameRate: 2},
+        walkRight: {imageSrc: "Myndir/walkRight.png", frameRate: 4},
+        walkLeft: {imageSrc: "Myndir/walkLeft.png", frameRate: 4},
+        shoot: {imageSrc: "Myndir/shoot.png", frameRate: 2},
+        dead: {imageSrc: "Myndir/dead.png", frameRate: 1},
+    } );
 
+    //bara til að testa
+    enemies.push(new Goblin("Myndir/EnemyP1.png", 1, animations = {
+        fullHealth: {imageSrc: "Myndir/EnemyP1.png",frameRate: 1},
+        halfHealth: {imageSrc: "Myndir/EnemyP2.png",frameRate: 1},
+    }));
 
-const hero = new Hero("Myndir/idleLeft.png", 2, animations = {
-    idleLeft: {imageSrc: "Myndir/idleLeft.png", frameRate: 2},
-    idleRight: {imageSrc: "Myndir/idleRight.png", frameRate: 2},
-    walkRight: {imageSrc: "Myndir/walkRight.png", frameRate: 4},
-    walkLeft: {imageSrc: "Myndir/walkLeft.png", frameRate: 4},
-    shoot: {imageSrc: "Myndir/shoot.png", frameRate: 2},
-    dead: {imageSrc: "Myndir/dead.png", frameRate: 1},
-} );
-
-//bara til að testa
-enemies.push(new Goblin("Myndir/EnemyP1.png", 1, animations = {
-    fullHealth: {imageSrc: "Myndir/EnemyP1.png",frameRate: 1},
-    halfHealth: {imageSrc: "Myndir/EnemyP2.png",frameRate: 1},
-}));
-
-requestAnimationFrame(main_loop);
+    requestAnimationFrame(main_loop);
+}
