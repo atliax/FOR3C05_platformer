@@ -76,6 +76,10 @@ function handleKeys()
         {
         hero.switchSprite("idleRight")
         }
+        if (lastKeyUpCode == KEY_UP)
+        {
+        hero.switchSprite("idleLeft")
+        }
     }
     
 }
@@ -168,6 +172,7 @@ class Hero extends Sprite
         this.jumping = false;
         this.shootDelay = 600;
         this.lastshotTime = 0;
+        this.hitpoints = 3
 
         this.animations = animations
 
@@ -385,9 +390,20 @@ function collision_consequence()
         if (check_collision(enemy_bullet[i], hero))
         {
             enemy_bullet.splice(i, 1);
-            console.log("hero dead");
+            hero.hitpoints--
+            console.log("hero hit");
+            console.log("hitpoints:", hero.hitpoints)
+            if (hero.hitpoints <= 0)
+            {
+                player_dead()
+            }
         }  
     }
+}
+
+function player_dead() 
+{
+
 }
 
 function enemies_move()
@@ -504,6 +520,23 @@ function draw_background()
     }
 }
 
+let isPlayerdead = false
+
+function player_dead()
+{
+
+    //hero.switchSprite("dead");
+    //hero.draw();
+    context.fillStyle = "red"; 
+    
+    context.font = "16px Serif";
+    context.fillText("R to restar, your score was xxxx", canvas.width / 2, canvas.height / 2);
+    console.log("is dead text showing");
+    isPlayerdead = true;
+
+
+}
+
 function draw_game()
 {
     draw_background();
@@ -519,6 +552,7 @@ var lastTimestamp = 0, maxFPS = 60, timestep = 1000 / maxFPS;
 
 function main_loop(timestamp)
 {
+    if (isPlayerdead) return;
     window.requestAnimationFrame(main_loop);  
     if (timestamp - lastTimestamp  < timestep) return;
 
@@ -544,18 +578,19 @@ const enemy_bullet = [];
 const hero_bullet = [];
 
 
-const hero = new Hero("myndir/idleLeft.png", 2, animations = {
+const hero = new Hero("Myndir/idleLeft.png", 2, animations = {
     idleLeft: {imageSrc: "Myndir/idleLeft.png", frameRate: 2},
     idleRight: {imageSrc: "Myndir/idleRight.png", frameRate: 2},
     walkRight: {imageSrc: "Myndir/walkRight.png", frameRate: 4},
     walkLeft: {imageSrc: "Myndir/walkLeft.png", frameRate: 4},
     shoot: {imageSrc: "Myndir/shoot.png", frameRate: 2},
+    dead: {imageSrc: "Myndir/dead.png", frameRate: 1},
 } );
 
 //bara til að testa
-enemies.push(new Goblin("myndir/EnemyP1.png", 1, animations = {
-    fullHealth: {imageSrc: "myndir/EnemyP1.png",frameRate: 1},
-    halfHealth: {imageSrc: "myndir/EnemyP2.png",frameRate: 1},
+enemies.push(new Goblin("Myndir/EnemyP1.png", 1, animations = {
+    fullHealth: {imageSrc: "Myndir/EnemyP1.png",frameRate: 1},
+    halfHealth: {imageSrc: "Myndir/EnemyP2.png",frameRate: 1},
 }));
 
 requestAnimationFrame(main_loop);
