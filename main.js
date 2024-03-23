@@ -56,6 +56,8 @@ let hero;
 let startTimestamp;
 let frameTimeLast;
 let frameTimeDelta;
+let targetFrameTime = 0.02;
+let frameAccumulator = 0;
 
 function get_timestamp()
 {
@@ -669,19 +671,24 @@ function main_loop(timestamp)
     let frameTimeCurrent = get_timestamp();
     frameTimeDelta = (frameTimeCurrent - frameTimeLast)/1000;
     frameTimeLast = frameTimeCurrent;
+    frameAccumulator += frameTimeDelta;
 
     handle_keys();
 
-    hero.move();
-    hero.gravity();
-    hero.drag();
-
-    enemies_move();
-    bullets_move();
-
-    enemies_shoot();
-
-    collision_consequence();
+    while(frameAccumulator > targetFrameTime)
+    {
+        hero.move();
+        hero.gravity();
+        hero.drag();
+    
+        enemies_move();
+        bullets_move();
+    
+        enemies_shoot();
+    
+        collision_consequence();
+        frameAccumulator -= targetFrameTime;
+    }
 
     draw_game();
 }
