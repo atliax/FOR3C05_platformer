@@ -10,6 +10,7 @@ hjarta eða score sem spawnar efst upp á platform, ástæðu til að klifra upp
 high score tafla
 restart game takki eftir að maður deyr.
 sounds, music.
+fara yfir hitbox á sprites aðeins betur 
 
 
 
