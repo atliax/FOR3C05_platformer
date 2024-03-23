@@ -208,7 +208,7 @@ const GRAVITY = 20;
 const PLAYER_ACCELERATION = 15;
 const PLAYER_MAX_SPEED = 10;
 const PLAYER_GROUND_SPEED_MODIFIER = 10;
-const PLAYER_JUMP_SPEED = 8;
+const PLAYER_JUMP_SPEED = 500;
 
 class Hero extends Sprite
 {
@@ -349,7 +349,7 @@ class Hero extends Sprite
     {
         if(this.velocityY == 0 && this.onGround)
         {
-            this.velocityY = -PLAYER_JUMP_SPEED;
+            this.velocityY = -PLAYER_JUMP_SPEED * frameTimeDelta;
             this.onGround = false;
         }
     }
