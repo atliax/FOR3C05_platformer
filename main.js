@@ -128,6 +128,15 @@ class Sprite
             this.animation()
         
     }
+    switchSprite(key) 
+    {
+        if (this.image === this.animations[key].image) return
+        this.image = this.animations[key].image
+        if (this.frameRate === this.animations[key].frameRate) return
+        this.frameRate = this.animations[key].frameRate
+    }
+
+
     
     animation()
     {
@@ -171,13 +180,7 @@ class Hero extends Sprite
 
     }
 
-    switchSprite(key) 
-    {
-        if (this.image === this.animations[key].image) return
-        this.image = this.animations[key].image
-        if (this.frameRate === this.animations[key].frameRate) return
-        this.frameRate = this.animations[key].frameRate
-    }
+
     move(speedchange)
     {
         if(speedchange < 0)
@@ -231,7 +234,7 @@ class Hero extends Sprite
         if(currentTime - this.lastshotTime > this.shootDelay)
         {
             const bullet_speed = -5;
-            const bullet = new Bullet(this.x+(this.width*0.5), this.y+this.height, bullet_speed);
+            const bullet = new Bullet("myndir/heroBullet.png", 1, this.x+(this.width*0.5), this.y, bullet_speed);
             hero_bullet.push(bullet);
             this.lastshotTime = currentTime;
         }
@@ -247,15 +250,16 @@ class Hero extends Sprite
     }
 }
 
-class Bullet 
+class Bullet extends Sprite
 {
-    constructor(x, y, speed)
+    constructor(imageSrc, frameRate, x, y, speed)
     {
+        super({imageSrc, frameRate, scale: 2.3 })
         this.x = x;
         this.y = y;
         this.speed = speed;
-        this.width = 10;
-        this.height = 10;
+        //this.width = 10;
+        //this.height = 10;
     }
 
     move()
@@ -263,24 +267,37 @@ class Bullet
         this.y += this.speed;
     }
 
-    draw()
+    /*draw()
     {
         context.fillStyle = "black";
         context.fillRect(this.x, this.y, this.width, this.height);
-    }
+
+    }*/
 }
 
-class Goblin
+class Goblin extends Sprite
 {
-    constructor()
+    constructor(imageSrc, frameRate, animations, scale = 2 )
     {
+        super({imageSrc, frameRate, scale,})
         this.x = Math.random()*15;
         this.y = 60;
         this.width = 200;
         this.height = 35;
         this.speed = 2;
         this.lastshotTime = 0;
-        this.shootDelay = 10000;
+        this.shootDelay = 1000;
+        this.hitpoints = 2;
+
+        this.animations = animations
+
+        for (let key in this.animations) 
+        {
+            const image = new Image()
+            image.src = this.animations[key].imageSrc
+            this.animations[key].image = image
+        }
+
     }
 
     move()
@@ -298,11 +315,14 @@ class Goblin
         }
     }
 
-    draw()
+    /*draw()
     {
-        context.fillStyle = "green";
-        context.fillRect(this.x, this.y, this.width, this.height, this.speed);
-    }
+        context.fillStyle = "green", 0.2;
+        //context.fillRect(this.x, this.y, this.width, this.height, this.speed);
+    }*/
+
+
+
 
     shoot()
     {
@@ -311,7 +331,7 @@ class Goblin
         if (currentTime - this.lastshotTime > this.shootDelay)
         {
             const bullet_speed = 5;
-            const bullet = new Bullet(this.x, this.y+this.height, bullet_speed);
+            const bullet = new Bullet("myndir/enemyBullets.png", 4,  this.x, this.y+this.height, bullet_speed);
             enemy_bullet.push(bullet);
             this.lastshotTime = currentTime;
         }
@@ -350,9 +370,14 @@ function collision_consequence()
             if (check_collision(hero_bullet[i], enemies[j]))
             {
                 hero_bullet.splice(i, 1);
+                enemies[j].hitpoints--;
+                enemies[j].switchSprite("halfHealth")
+                if (enemies[j].hitpoints <= 0)
+                { 
                 enemies.splice(j, 1);
+                }
             }
-        }
+        } 
     }
 
     for (let i= 0; i < enemy_bullet.length; i++)
@@ -528,6 +553,9 @@ const hero = new Hero("myndir/idleLeft.png", 2, animations = {
 } );
 
 //bara til að testa
-enemies.push(new Goblin());
+enemies.push(new Goblin("myndir/EnemyP1.png", 1, animations = {
+    fullHealth: {imageSrc: "myndir/EnemyP1.png",frameRate: 1},
+    halfHealth: {imageSrc: "myndir/EnemyP2.png",frameRate: 1},
+}));
 
 requestAnimationFrame(main_loop);
