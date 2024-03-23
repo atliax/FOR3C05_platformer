@@ -610,26 +610,38 @@ let isPlayerdead = false
 
 function player_dead()
 {
-
-    //hero.switchSprite("dead");
-    //hero.draw();
+    draw_background()
+    hero.switchSprite("dead");
+    hero.draw();
     context.fillStyle = "red"; 
-    
-    context.font = "16px Serif";
-    context.fillText("R to restar, your score was xxxx", canvas.width / 2, canvas.height / 2);
-    console.log("is dead text showing");
+    context.font = "24px Serif";
+    context.fillText("Game Over, Press R to restart. Score: xxx", canvas.width / 3, canvas.height / 2);
     isPlayerdead = true;
+}
 
+const heartImage = new Image();
+heartImage.src = "Myndir/heart.png"
 
+function draw_life()
+{
+    const spacing = 10;
+    const X = 15
+    const Y = canvas.height - 40;
+
+    for (let i =0; i < hero.hitpoints; i++)
+    {
+        life = X + (heartImage.width + spacing) * i
+        context.drawImage(heartImage, life, Y)
+    }
 }
 
 function draw_game()
 {
+    if (isPlayerdead) return;  // asnalegt bug ef ég set þetta ekki hérna. textinn kemur ekki af einhverjum ástæðum. 
     draw_background();
-
     hero.draw();
     enemies_draw();
-
+    draw_life()
     bullets_draw();
 
     let locString = "".concat("X:",hero.x.toString(),", Y:",hero.y.toString());
