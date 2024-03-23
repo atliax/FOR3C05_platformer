@@ -336,7 +336,7 @@ class Hero extends Sprite
         const currentTime = new Date().getTime();
         if(currentTime - this.lastshotTime > this.shootDelay)
         {
-            const bullet_speed = -5;
+            const bullet_speed = -150;
             const bullet = new Bullet("myndir/heroBullet.png", 1, this.x+(this.width*0.5), this.y, bullet_speed);
             hero_bullet.push(bullet);
             this.lastshotTime = currentTime;
@@ -380,7 +380,7 @@ class Bullet extends Sprite
 
     move()
     {
-        this.y += this.speed;
+        this.y += this.speed * frameTimeDelta;
     }
 
     /*draw()
@@ -400,7 +400,7 @@ class Goblin extends Sprite
         this.y = 60;
         this.width = 200;
         this.height = 35;
-        this.speed = 2;
+        this.speed = 60;
         this.lastshotTime = 0;
         this.shootDelay = 1000;
         this.hitpoints = 2;
@@ -418,7 +418,7 @@ class Goblin extends Sprite
 
     move()
     {
-        this.x += this.speed;
+        this.x += this.speed * frameTimeDelta;
 
         if (this.x+this.width >= canvas.width)
         {
@@ -446,7 +446,7 @@ class Goblin extends Sprite
 
         if (currentTime - this.lastshotTime > this.shootDelay)
         {
-            const bullet_speed = 5;
+            const bullet_speed = 150;
             const bullet = new Bullet("Myndir/enemyBullets.png", 4,  this.x, this.y+this.height, bullet_speed);
             enemy_bullet.push(bullet);
             this.lastshotTime = currentTime;
