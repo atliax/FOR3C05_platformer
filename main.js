@@ -3,6 +3,7 @@ context = canvas.getContext('2d');
 addEventListener("load",initialize);
 
 let runGame;
+let numEnemies;
 
 //key virkni sem ég fann á netinu
 const KEY_LEFT = 37;
@@ -12,6 +13,10 @@ const KEY_DOWN = 40;
 const KEY_SPACE = 32;
 const KEY_R = 82;
 let lastKeyUpCode = null
+
+const MAX_ENEMIES = 1;
+const ENEMY_SPAWN_INTERVAL = 5000;
+let lastEnemySpawn;
 
 const backgroundImage = new Image()
 
@@ -93,6 +98,8 @@ function restart_game()
     hero.velocityY = 0;
     hero.hitpoints = 3;
     isPlayerdead = false;
+    enemies.splice(0,numEnemies);
+    numEnemies = 0;
 }
 
 //key virkni sem ég fann á netinu
@@ -358,7 +365,7 @@ class Hero extends Sprite
         if(currentTime - this.lastshotTime > this.shootDelay)
         {
             const bullet_speed = -5;
-            const bullet = new Bullet("myndir/heroBullet.png", 1, this.x+(this.width*0.5), this.y, bullet_speed);
+            const bullet = new Bullet("Myndir/heroBullet.png", 1, this.x+(this.width*0.5), this.y, bullet_speed);
             hero_bullet.push(bullet);
             this.lastshotTime = currentTime;
         }
@@ -415,7 +422,7 @@ class Goblin extends Sprite
     constructor(imageSrc, frameRate, animations, scale = 2 )
     {
         super({imageSrc, frameRate, scale,})
-        this.x = Math.random()*15;
+        this.x = Math.random()*(canvas.width-1);
         this.y = 60;
         this.width = 200;
         this.height = 35;
@@ -432,7 +439,7 @@ class Goblin extends Sprite
             image.src = this.animations[key].imageSrc
             this.animations[key].image = image
         }
-
+        numEnemies++;
     }
 
     move()
@@ -508,8 +515,9 @@ function collision_consequence()
                 enemies[j].hitpoints--;
                 enemies[j].switchSprite("halfHealth")
                 if (enemies[j].hitpoints <= 0)
-                { 
-                enemies.splice(j, 1);
+                {
+                    numEnemies--;
+                    enemies.splice(j, 1);
                 }
             }
         } 
@@ -687,6 +695,8 @@ function main_loop(timestamp)
 {
     handle_keys();
 
+    spawn_enemies();
+    
     hero.move();
     hero.gravity();
     hero.drag();
@@ -703,6 +713,9 @@ function main_loop(timestamp)
 
 function initialize()
 {
+    numEnemies = 0;
+    lastEnemySpawn = 0;
+
     backgroundImage.src = "Myndir/Bar.jpg" // bara placeholder mögulega
     brickTile.src = "Myndir/tileBrick.png";
     document.addEventListener("keydown",keydown);
@@ -717,11 +730,21 @@ function initialize()
         dead: {imageSrc: "Myndir/dead.png", frameRate: 1},
     } );
 
-    //bara til að testa
-    enemies.push(new Goblin("Myndir/EnemyP1.png", 1, animations = {
-        fullHealth: {imageSrc: "Myndir/EnemyP1.png",frameRate: 1},
-        halfHealth: {imageSrc: "Myndir/EnemyP2.png",frameRate: 1},
-    }));
-
     runGame = setInterval(main_loop,1000/60)
+}
+
+function spawn_enemies()
+{
+    if(numEnemies >= MAX_ENEMIES)
+    {
+        return;
+    }
+
+    if(get_timestamp() - lastEnemySpawn > ENEMY_SPAWN_INTERVAL)
+    {
+        enemies.push(new Goblin("Myndir/EnemyP1.png", 1, animations = {
+            fullHealth: {imageSrc: "Myndir/EnemyP1.png",frameRate: 1},
+            halfHealth: {imageSrc: "Myndir/EnemyP2.png",frameRate: 1},
+        }));
+    }
 }
