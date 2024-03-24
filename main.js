@@ -84,6 +84,11 @@ function keyup(event)
 //key virkni sem ég fann á netinu
 function handle_keys()
 {
+    if(isPlayerdead)
+    {
+        return;
+    }
+
     if(keys[KEY_LEFT] == true)
     {
         hero.walk(-hero.speed);
@@ -606,13 +611,15 @@ let isPlayerdead = false
 
 function player_dead()
 {
-    draw_background()
     hero.switchSprite("dead");
-    hero.draw();
+    isPlayerdead = true;
+}
+
+function draw_dead_message()
+{
     context.fillStyle = "red"; 
     context.font = "24px Serif";
     context.fillText("Game Over, Press R to restart. Score: xxx", canvas.width / 3, canvas.height / 2);
-    isPlayerdead = true;
 }
 
 const heartImage = new Image();
@@ -633,13 +640,18 @@ function draw_life()
 
 function draw_game()
 {
-    if (isPlayerdead) return;  // asnalegt bug ef ég set þetta ekki hérna. textinn kemur ekki af einhverjum ástæðum. 
+//    if (isPlayerdead) return;  // asnalegt bug ef ég set þetta ekki hérna. textinn kemur ekki af einhverjum ástæðum. 
     draw_background();
     hero.draw();
     enemies_draw();
     draw_life()
     bullets_draw();
 
+    if(isPlayerdead)
+    {
+        draw_dead_message();
+    }
+    
     let locString = "".concat("X:",hero.x.toString(),", Y:",hero.y.toString());
     context.fillStyle = "white";
     context.fillText(locString,100,10);
@@ -656,8 +668,6 @@ function draw_game()
 
 function main_loop(timestamp)
 {
-    if (isPlayerdead) return;
-
     handle_keys();
 
     hero.move();
