@@ -38,7 +38,7 @@ const bulletHit = new Audio(); bulletHit.src = "Music/bulletHit.mp3";
 const goblinShoot = new Audio(); goblinShoot.src = "Music/goblinShoot.mp3"; goblinShoot.volume = 0.3;
 const heroDamage = new Audio(); heroDamage.src = "Music/heroDamage.wav";
 const heroWalk = new Audio(); heroWalk.src = "Music/walk.flac"; heroWalk.volume = 0.2;
-const heroJump = new Audio(); heroJump.src = "Music/jump.ogg"; heroJump.volume = 0.3
+const heroJump = new Audio(); heroJump.src = "Music/jump.ogg"; heroJump.volume = 0.1
 
 
 const backgroundImage = new Image()
@@ -229,7 +229,7 @@ class Hero extends Sprite
         }
         else if(!isPlayerdead)
         {
-            let mapX  = Math.floor((newPosX+5)/levelScale);
+            let mapX  = Math.floor((newPosX)/levelScale);
             let mapY  = Math.floor((newPosY+(2*levelScale))/levelScale);
             let mapX3 = Math.floor(((newPosX-16)+(1.8*levelScale))/levelScale);
 
@@ -420,7 +420,13 @@ function restart_game()
     hero_bullet.splice(0,hero_bullet.length);
     enemy_bullet.splice(0,enemy_bullet.length);
     clearInterval(bonusInterval);
+    bonusInterval = setInterval(bonus, 45000)
     extraFlag = false;
+    enemies.push(new Goblin("Myndir/EnemyP1Big.png", 1, animations = {
+        fullHealth: {imageSrc: "Myndir/EnemyP1Big.png",frameRate: 1},
+        halfHealth: {imageSrc: "Myndir/EnemyP2Big.png",frameRate: 1},
+    },1));
+    
 
 }
 
@@ -787,7 +793,7 @@ function initialize()
 
     musicTrack1.src = "Music/track1.mp3";
     musicTrack1.loop = true;
-    musicTrack1.volume = 0.3
+    musicTrack1.volume = 0.2
 
     backgroundImage.src = "Myndir/Bar.jpg" // bara placeholder mögulega
     brickTile.src = "Myndir/tileBrick.png";
