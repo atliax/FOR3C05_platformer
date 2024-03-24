@@ -26,10 +26,15 @@ const PLAYER_MAX_SPEED = 6;
 const PLAYER_GROUND_SPEED_MODIFIER = 0.25;
 const PLAYER_JUMP_SPEED = 10;
 
-let MAX_ENEMIES = 3;
-let ENEMY_SPAWN_INTERVAL = 5000;
+const DEFAULT_MAX_ENEMIES = 3;
+const DEFAULT_ENEMY_SPAWN_INTERVAL = 5000;
+const DEFAULT_DIFFICULTY = 1000;
+
+let maxEnemies = DEFAULT_MAX_ENEMIES;
+let enemySpawnInterval = DEFAULT_ENEMY_SPAWN_INTERVAL;
+let difficulty = DEFAULT_DIFFICULTY
+
 let lastEnemySpawn;
-let difficulty = 1000
 
 const musicTrack1 = new Audio();
 const heroDead = new Audio(); heroDead.src = "Music/heroDead.mp4";
@@ -411,18 +416,22 @@ function restart_game()
     hero.velocityY = 0;
     hero.hitpoints = 3;
     isPlayerdead = false;
+
+    hero_bullet.splice(0,hero_bullet.length);
+    enemy_bullet.splice(0,enemy_bullet.length);
+
     enemies.splice(0,numEnemies);
     numEnemies = 0;
     score = 0;
-    MAX_ENEMIES = 3;
-    ENEMY_SPAWN_INTERVAL = 5000
-    difficulty = 1000
-    hero_bullet.splice(0,hero_bullet.length);
-    enemy_bullet.splice(0,enemy_bullet.length);
+
+    maxEnemies = DEFAULT_MAX_ENEMIES;
+    enemySpawnInterval = DEFAULT_ENEMY_SPAWN_INTERVAL;
+    difficulty = DEFAULT_DIFFICULTY;
+    lastEnemySpawn = get_timestamp()-enemySpawnInterval;
+
     clearInterval(bonusInterval);
     bonusInterval = setInterval(bonus, 45000)
     extraFlag = false;
-    lastEnemySpawn = get_timestamp()-ENEMY_SPAWN_INTERVAL;
 }
 
 function handle_keys()
@@ -567,10 +576,14 @@ function draw_score()
     context.font = "24px Serif";
     context.fillText("score: "+score, canvas.width -170 , canvas.height - 10);
     context.restore();
-    if (score >= difficulty){ENEMY_SPAWN_INTERVAL -= 500, difficulty += 1000};
-    if (score === 2000) MAX_ENEMIES = 4
-    if (score === 5000) MAX_ENEMIES = 6
-    if (score === 8000) MAX_ENEMIES = 12
+}
+
+function adjust_difficulty()
+{
+    if (score >= difficulty){enemySpawnInterval -= 500, difficulty += 1000};
+    if (score === 2000) maxEnemies = 4
+    if (score === 5000) maxEnemies = 6
+    if (score === 8000) maxEnemies = 12
 }
 
 function draw_bonus()
@@ -581,7 +594,7 @@ function draw_bonus()
         extra_lifer = context.drawImage(heartImage, extra_life.x, extra_life.y)
         if (check_collision(extra_life, hero))
         {
-            hero.hitpoints ++
+            hero.hitpoints++
             extraFlag = false
         }
     }
@@ -761,6 +774,8 @@ function main_loop(timestamp)
 {
     handle_keys();
 
+    adjust_difficulty();
+
     spawn_enemies();
     
     hero.move();
@@ -812,12 +827,12 @@ function initialize()
 
 function spawn_enemies()
 {
-    if(numEnemies >= MAX_ENEMIES)
+    if(numEnemies >= maxEnemies)
     {
         return;
     }
 
-    if(get_timestamp() - lastEnemySpawn > ENEMY_SPAWN_INTERVAL)
+    if(get_timestamp() - lastEnemySpawn > enemySpawnInterval)
     {
         enemies.push(new Goblin("Myndir/EnemyP1Big.png", 1, animations = {
             fullHealth: {imageSrc: "Myndir/EnemyP1Big.png",frameRate: 1},
