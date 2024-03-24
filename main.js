@@ -360,7 +360,7 @@ class Goblin extends Sprite
     {
         const currentTime = new Date().getTime();
 
-        if (currentTime - this.lastshotTime > this.shootDelay)
+        if (document.hasFocus() && currentTime - this.lastshotTime > this.shootDelay)
         {
             const bullet_speed = 5;
             const bullet = new Bullet("Myndir/enemyBulletsBig.png", 4,  this.x, this.y+this.height, bullet_speed);
