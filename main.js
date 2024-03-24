@@ -229,9 +229,11 @@ class Hero extends Sprite
         }
         else if(!isPlayerdead)
         {
-            let mapX  = Math.floor((newPosX + 5) / levelScale);
-            let mapY  = Math.floor((newPosY + (2 * levelScale)) / levelScale);
-            let mapX3 = Math.floor(((newPosX - 16) + (1.8 * levelScale)) / levelScale);
+
+            let mapX  = Math.floor((newPosX)/levelScale);
+            let mapY  = Math.floor((newPosY+(2*levelScale))/levelScale);
+            let mapX3 = Math.floor(((newPosX-16)+(1.8*levelScale))/levelScale);
+
 
             if(get_map_collision(mapX,mapY) ||
                get_map_collision(mapX3,mapY))
