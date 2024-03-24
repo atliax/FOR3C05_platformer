@@ -32,6 +32,12 @@ let lastEnemySpawn;
 let difficulty = 1000
 
 const musicTrack1 = new Audio();
+const heroDead = new Audio(); heroDead.src = "Music/heroDead.mp4";
+const heroShoot = new Audio(); heroShoot.src ="Music/heroShoot.mp3";heroShoot.volume = 0.4;
+const bulletHit = new Audio(); bulletHit.src = "Music/bulletHit.mp3";
+const goblinShoot = new Audio(); goblinShoot.src = "Music/goblinShoot.mp3";goblinShoot.volume = 0.3
+const heroDamage = new Audio(); heroDamage.src = "Music/heroDamage.wav"
+
 
 const backgroundImage = new Image()
 const heartImage = new Image();
@@ -277,6 +283,7 @@ class Hero extends Sprite
             const bullet = new Bullet("Myndir/heroBulletBig.png", 1, this.x+(this.width*0.5), this.y, bullet_speed);
             hero_bullet.push(bullet);
             this.lastshotTime = currentTime;
+            heroShoot.play()
         }
     }
 
@@ -356,6 +363,7 @@ class Goblin extends Sprite
             const bullet = new Bullet("Myndir/enemyBulletsBig.png", 4,  this.x, this.y+this.height, bullet_speed);
             enemy_bullet.push(bullet);
             this.lastshotTime = currentTime;
+            goblinShoot.play()
         }
     }
 }
@@ -513,6 +521,7 @@ function collision_consequence()
                 hero_bullet.splice(i, 1);
                 enemies[j].hitpoints--;
                 enemies[j].switchSprite("halfHealth")
+                bulletHit.play()
                 if (enemies[j].hitpoints <= 0)
                 {
                     numEnemies--;
@@ -529,8 +538,7 @@ function collision_consequence()
         {
             enemy_bullet.splice(i, 1);
             hero.hitpoints--
-            console.log("hero hit");
-            console.log("hitpoints:", hero.hitpoints)
+            heroDamage.play()
             if (hero.hitpoints <= 0)
             {
                 player_dead()
@@ -654,6 +662,7 @@ function player_dead()
 {
     hero.switchSprite("dead");
     isPlayerdead = true;
+    heroDead.play()
 }
 
 function draw_dead_message()
@@ -770,6 +779,7 @@ function initialize()
 
     musicTrack1.src = "Music/track1.mp3";
     musicTrack1.loop = true;
+    musicTrack1.volume = 0.3
 
     backgroundImage.src = "Myndir/Bar.jpg" // bara placeholder mögulega
     brickTile.src = "Myndir/tileBrick.png";
