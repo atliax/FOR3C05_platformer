@@ -220,16 +220,14 @@ class Hero extends Sprite
         }
         else if(!isPlayerdead)
         {
-            let mapX = Math.floor(newPosX/levelScale);
-            let mapY = Math.floor((newPosY+(2*levelScale))/levelScale);
-            let mapX2 = Math.floor((newPosX+(0.9*levelScale))/levelScale);
-            let mapX3 = Math.floor((newPosX+(1.8*levelScale))/levelScale);
+            let mapX  = Math.floor((newPosX+5)/levelScale);
+            let mapY  = Math.floor((newPosY+(2*levelScale))/levelScale);
+            let mapX3 = Math.floor(((newPosX-16)+(1.8*levelScale))/levelScale);
 
             if(get_map_collision(mapX,mapY) ||
-               get_map_collision(mapX2,mapY) ||
                get_map_collision(mapX3,mapY))
             {
-                newPosY = (Math.floor(newPosY/levelScale))*levelScale;
+                newPosY = (Math.floor(newPosY/levelScale))*levelScale+4;
                 this.velocityY = 0;
                 this.onGround = true;
             }
