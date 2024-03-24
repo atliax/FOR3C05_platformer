@@ -14,7 +14,7 @@ const KEY_SPACE = 32;
 const KEY_R = 82;
 let lastKeyUpCode = null
 
-const MAX_ENEMIES = 1;
+const MAX_ENEMIES = 3;
 const ENEMY_SPAWN_INTERVAL = 5000;
 let lastEnemySpawn;
 
@@ -422,9 +422,9 @@ class Goblin extends Sprite
     constructor(imageSrc, frameRate, animations, scale = 2 )
     {
         super({imageSrc, frameRate, scale,})
-        this.x = Math.random()*(canvas.width-1);
         this.y = 60;
         this.width = 200;
+        this.x = Math.random()*(canvas.width-this.width);
         this.height = 35;
         this.speed = 2;
         this.lastshotTime = 0;
