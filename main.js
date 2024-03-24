@@ -617,9 +617,13 @@ function player_dead()
 
 function draw_dead_message()
 {
+    context.save();
+    context.textBaseline = "middle";
+    context.textAlign = "center";
     context.fillStyle = "red"; 
     context.font = "24px Serif";
-    context.fillText("Game Over, Press R to restart. Score: xxx", canvas.width / 3, canvas.height / 2);
+    context.fillText("Game Over, Press R to restart. Score: xxx", canvas.width / 2, canvas.height / 2);
+    context.restore();
 }
 
 const heartImage = new Image();
