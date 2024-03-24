@@ -598,40 +598,28 @@ function enemies_shoot()
     }
 }
 
-function bullets_move()
+function bullets_move(array)
 {
-    if(enemy_bullet.length > 0)
+    if(array.length > 0)
     {
-        for (let i = 0; i < enemy_bullet.length; i++)
+        for (let i = 0; i < array.length; i++)
         {
-            enemy_bullet[i].move();
-        }
-    }
-
-    if(hero_bullet.length > 0)
-    {
-        for (let i = 0; i < hero_bullet.length; i++)
-        {
-            hero_bullet[i].move();
+            array[i].move();
+            if(array[i].y > canvas.height || array[i].y < 0)
+            {
+                array.splice(i,1);
+            }
         }
     }
 }
 
-function bullets_draw()
+function bullets_draw(array)
 {
-    if(enemy_bullet.length > 0)
+    if(array.length > 0)
     {
-        for (let i = 0; i < enemy_bullet.length; i++)
+        for (let i = 0; i < array.length; i++)
         {
-            enemy_bullet[i].draw();
-        }
-    }
-
-    if(hero_bullet.length > 0)
-    {
-        for (let i = 0; i < hero_bullet.length; i++)
-        {
-            hero_bullet[i].draw();
+            array[i].draw();
         }
     }
 }
@@ -714,7 +702,8 @@ function draw_game()
     hero.draw();
     enemies_draw();
     draw_life()
-    bullets_draw();
+    bullets_draw(hero_bullet);
+    bullets_draw(enemy_bullet);
     score_draw()
     draw_bonus()
     console.log(ENEMY_SPAWN_INTERVAL)
@@ -754,7 +743,8 @@ function main_loop(timestamp)
     hero.drag();
     
     enemies_move();
-    bullets_move();
+    bullets_move(hero_bullet);
+    bullets_move(enemy_bullet);
     
     enemies_shoot();
     
