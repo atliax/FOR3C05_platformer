@@ -3,9 +3,10 @@ context = canvas.getContext('2d');
 addEventListener("load",initialize);
 
 let runGame;
-
+let extraFlag;
 let bonusInterval;
 let numEnemies;
+let isPlayerdead;
 
 const KEY_LEFT = 37;
 const KEY_RIGHT = 39;
@@ -15,12 +16,18 @@ const KEY_SPACE = 32;
 const KEY_R = 82;
 let lastKeyUpCode = null
 
+const GRAVITY = 0.5;
+const PLAYER_ACCELERATION = 0.5;
+const PLAYER_MAX_SPEED = 6;
+const PLAYER_GROUND_SPEED_MODIFIER = 0.25;
+const PLAYER_JUMP_SPEED = 10;
+
 const MAX_ENEMIES = 3;
 const ENEMY_SPAWN_INTERVAL = 5000;
 let lastEnemySpawn;
 
 const backgroundImage = new Image()
-
+const heartImage = new Image();
 const brickTile = new Image();
 
 const levelWidth = 26;
@@ -62,103 +69,6 @@ const hero_bullet = [];
 
 let hero;
 
-function get_timestamp()
-{
-    return performance.timeOrigin + performance.now();
-}
-
-function keydown(event)
-{
-    if(event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT ||
-       event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE ||
-       event.keyCode == KEY_R)
-    {
-        keys[event.keyCode] = true;
-    }
-}
-
-//key virkni sem ég fann á netinu
-function keyup(event)
-{
-    if(event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT ||
-       event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE ||
-       event.keyCode == KEY_R)
-    {
-        keys[event.keyCode] = false;
-        lastKeyUpCode = event.keyCode;
-    }
-}
-
-
-function restart_game()
-{
-    hero.switchSprite("idleRight");
-    hero.x = canvas.width/2.3;
-    hero.y = canvas.height - 96;
-    hero.velocityX = 0;
-    hero.velocityY = 0;
-    hero.hitpoints = 3;
-    isPlayerdead = false;
-    enemies.splice(0,numEnemies);
-    numEnemies = 0;
-    score = 0;
-}
-
-function handle_keys()
-{
-    if(isPlayerdead)
-    {
-        if(keys[KEY_R] == true)
-        {
-            restart_game();
-        }
-        return;
-    }
-
-    if(keys[KEY_LEFT] == true)
-    {
-        hero.walk(-hero.speed);
-        hero.switchSprite("walkLeft")
-    }
-
-    if(keys[KEY_RIGHT] == true)
-    {
-        hero.walk(hero.speed);
-        hero.switchSprite("walkRight")
-    }
-
-    if(keys[KEY_UP] == true)
-    {
-        hero.jump();
-    }
-
-    if(keys[KEY_SPACE] == true)
-    {
-        hero.shoot();
-        hero.switchSprite("shoot")
-    }
-    
-    if (!keys[KEY_LEFT] && !keys[KEY_RIGHT] && !keys[KEY_UP] && !keys[KEY_SPACE])
-    {
-        if (lastKeyUpCode == KEY_LEFT)
-        {
-        hero.switchSprite("idleLeft")
-        }
-        if (lastKeyUpCode == KEY_RIGHT)
-        {
-        hero.switchSprite("idleRight")
-        }
-        if (lastKeyUpCode == KEY_SPACE)
-        {
-        hero.switchSprite("idleRight")
-        }
-        if (lastKeyUpCode == KEY_UP)
-        {
-        hero.switchSprite("idleLeft")
-        }
-    }
-    
-}
 class Sprite 
 {
     constructor({imageSrc, frameRate, frameBuffer = 4, scale = 1})
@@ -231,22 +141,12 @@ class Sprite
     
 }
 
-const GRAVITY = 0.5;
-const PLAYER_ACCELERATION = 0.5;
-const PLAYER_MAX_SPEED = 6;
-const PLAYER_GROUND_SPEED_MODIFIER = 0.25;
-const PLAYER_JUMP_SPEED = 10;
-
 class Hero extends Sprite
 {
 
     constructor(imageSrc, frameRate, animations, scale = 2)
     {
         super({imageSrc, frameRate, scale });
-        //this.width = 80;
-        //this.height = 100;
-        //this.x = canvas.width/2.3;
-        //this.y = canvas.height - this.height;
 
         this.speed = PLAYER_ACCELERATION;
 
@@ -382,19 +282,6 @@ class Hero extends Sprite
     }
 }
 
-function get_map_collision(X,Y)
-{
-    if(X < 0 || X >= levelWidth)
-        return false;
-    if(Y < 0 || Y >= levelHeight)
-        return false;
-
-    if(levelData[Y * levelWidth + X] != 0)
-        return true;
-
-    return false;
-}
-
 class Bullet extends Sprite
 {
     constructor(imageSrc, frameRate, x, y, speed)
@@ -409,13 +296,6 @@ class Bullet extends Sprite
     {
         this.y += this.speed;
     }
-
-    /*draw()
-    {
-        context.fillStyle = "black";
-        context.fillRect(this.x, this.y, this.width, this.height);
-
-    }*/
 }
 
 class Goblin extends Sprite
@@ -458,15 +338,6 @@ class Goblin extends Sprite
         }
     }
 
-    /*draw()
-    {
-        context.fillStyle = "green", 0.2;
-        //context.fillRect(this.x, this.y, this.width, this.height, this.speed);
-    }*/
-
-
-
-
     shoot()
     {
         const currentTime = new Date().getTime();
@@ -479,6 +350,116 @@ class Goblin extends Sprite
             this.lastshotTime = currentTime;
         }
     }
+}
+
+function get_timestamp()
+{
+    return performance.timeOrigin + performance.now();
+}
+
+function keydown(event)
+{
+    if(event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT ||
+       event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE ||
+       event.keyCode == KEY_R)
+    {
+        keys[event.keyCode] = true;
+    }
+}
+
+//key virkni sem ég fann á netinu
+function keyup(event)
+{
+    if(event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT ||
+       event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE ||
+       event.keyCode == KEY_R)
+    {
+        keys[event.keyCode] = false;
+        lastKeyUpCode = event.keyCode;
+    }
+}
+
+
+function restart_game()
+{
+    hero.switchSprite("idleRight");
+    hero.x = canvas.width/2.3;
+    hero.y = canvas.height - 96;
+    hero.velocityX = 0;
+    hero.velocityY = 0;
+    hero.hitpoints = 3;
+    isPlayerdead = false;
+    enemies.splice(0,numEnemies);
+    numEnemies = 0;
+    score = 0;
+}
+
+function handle_keys()
+{
+    if(isPlayerdead)
+    {
+        if(keys[KEY_R] == true)
+        {
+            restart_game();
+        }
+        return;
+    }
+
+    if(keys[KEY_LEFT] == true)
+    {
+        hero.walk(-hero.speed);
+        hero.switchSprite("walkLeft")
+    }
+
+    if(keys[KEY_RIGHT] == true)
+    {
+        hero.walk(hero.speed);
+        hero.switchSprite("walkRight")
+    }
+
+    if(keys[KEY_UP] == true)
+    {
+        hero.jump();
+    }
+
+    if(keys[KEY_SPACE] == true)
+    {
+        hero.shoot();
+        hero.switchSprite("shoot")
+    }
+    
+    if (!keys[KEY_LEFT] && !keys[KEY_RIGHT] && !keys[KEY_UP] && !keys[KEY_SPACE])
+    {
+        if (lastKeyUpCode == KEY_LEFT)
+        {
+        hero.switchSprite("idleLeft")
+        }
+        if (lastKeyUpCode == KEY_RIGHT)
+        {
+        hero.switchSprite("idleRight")
+        }
+        if (lastKeyUpCode == KEY_SPACE)
+        {
+        hero.switchSprite("idleRight")
+        }
+        if (lastKeyUpCode == KEY_UP)
+        {
+        hero.switchSprite("idleLeft")
+        }
+    }
+}
+
+function get_map_collision(X,Y)
+{
+    if(X < 0 || X >= levelWidth)
+        return false;
+    if(Y < 0 || Y >= levelHeight)
+        return false;
+
+    if(levelData[Y * levelWidth + X] != 0)
+        return true;
+
+    return false;
 }
 
 function check_collision(bullet, object)
@@ -552,8 +533,6 @@ function score_draw()
     context.restore();
 }
 
-let extraFlag = false; 
-
 function draw_bonus()
 {
     if (extraFlag === true)
@@ -567,11 +546,11 @@ function draw_bonus()
         }
     }
 }
+
 function bonus()
 {
     extraFlag = true
 }
-bonusInterval = setInterval(bonus, 6000)
 
 function enemies_move()
 {
@@ -662,8 +641,6 @@ function draw_background()
     }
 }
 
-let isPlayerdead = false
-
 function player_dead()
 {
     hero.switchSprite("dead");
@@ -705,9 +682,6 @@ function draw_dead_message()
 
 }
 
-const heartImage = new Image();
-heartImage.src = "Myndir/heart.png"
-
 function draw_life()
 {
     const spacing = 10;
@@ -723,7 +697,6 @@ function draw_life()
 
 function draw_game()
 {
-//    if (isPlayerdead) return;  // asnalegt bug ef ég set þetta ekki hérna. textinn kemur ekki af einhverjum ástæðum. 
     draw_background();
     hero.draw();
     enemies_draw();
@@ -773,11 +746,15 @@ function main_loop(timestamp)
 
 function initialize()
 {
+    isPlayerdead = false;
     numEnemies = 0;
     lastEnemySpawn = 0;
+    extraFlag = false;
 
     backgroundImage.src = "Myndir/Bar.jpg" // bara placeholder mögulega
     brickTile.src = "Myndir/tileBrick.png";
+    heartImage.src = "Myndir/heart.png";
+
     document.addEventListener("keydown",keydown);
     document.addEventListener("keyup",keyup);
 
@@ -792,6 +769,7 @@ function initialize()
 
     runGame = setInterval(main_loop,1000/60)
     bonusInterval = setInterval(bonus, 45000)
+    bonusInterval = setInterval(bonus, 6000)
 }
 
 function spawn_enemies()
