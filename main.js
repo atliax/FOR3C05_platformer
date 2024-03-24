@@ -29,6 +29,8 @@ let ENEMY_SPAWN_INTERVAL = 5000;
 let lastEnemySpawn;
 let difficulty = 1000
 
+const musicTrack1 = new Audio();
+
 const backgroundImage = new Image()
 const heartImage = new Image();
 const brickTile = new Image();
@@ -760,6 +762,9 @@ function initialize()
     lastEnemySpawn = 0;
     extraFlag = false;
 
+    musicTrack1.src = "Music/track1.mp3";
+    musicTrack1.loop = true;
+
     backgroundImage.src = "Myndir/Bar.jpg" // bara placeholder mögulega
     brickTile.src = "Myndir/tileBrick.png";
     heartImage.src = "Myndir/heart.png";
@@ -775,6 +780,8 @@ function initialize()
         shoot: {imageSrc: "Myndir/shoot.png", frameRate: 2},
         dead: {imageSrc: "Myndir/dead.png", frameRate: 1},
     } );
+
+    musicTrack1.play();
 
     runGame = setInterval(main_loop,1000/60)
     bonusInterval = setInterval(bonus, 45000)
