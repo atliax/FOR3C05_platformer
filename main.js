@@ -3,15 +3,15 @@ context = canvas.getContext('2d');
 addEventListener("load",initialize);
 
 let runGame;
+
+let bonusInterval;
 let numEnemies;
 
-//key virkni sem ég fann á netinu
 const KEY_LEFT = 37;
 const KEY_RIGHT = 39;
 const KEY_UP = 38;
 const KEY_DOWN = 40;
 const KEY_SPACE = 32;
-const KEY_R = 82;
 let lastKeyUpCode = null
 
 const MAX_ENEMIES = 3;
@@ -55,7 +55,7 @@ let levelData = [
 const keys = [];
 
 const enemies = [];
-
+let score = 0
 const enemy_bullet = [];
 const hero_bullet = [];
 
@@ -66,12 +66,10 @@ function get_timestamp()
     return performance.timeOrigin + performance.now();
 }
 
-//key virkni sem ég fann á netinu
 function keydown(event)
 {
     if(event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT ||
-       event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE ||
-       event.keyCode == KEY_R)
+       event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE)
     {
         keys[event.keyCode] = true;
     }
@@ -81,13 +79,13 @@ function keydown(event)
 function keyup(event)
 {
     if(event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT ||
-       event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE ||
-       event.keyCode == KEY_R)
+       event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE)
     {
         keys[event.keyCode] = false;
         lastKeyUpCode = event.keyCode;
     }
 }
+
 
 function restart_game()
 {
@@ -102,15 +100,10 @@ function restart_game()
     numEnemies = 0;
 }
 
-//key virkni sem ég fann á netinu
 function handle_keys()
 {
     if(isPlayerdead)
     {
-        if(keys[KEY_R] == true)
-        {
-            restart_game();
-        }
         return;
     }
 
@@ -515,9 +508,16 @@ function collision_consequence()
                 enemies[j].hitpoints--;
                 enemies[j].switchSprite("halfHealth")
                 if (enemies[j].hitpoints <= 0)
+
+                { 
+                enemies.splice(j, 1);
+                score += 100;
+
                 {
                     numEnemies--;
                     enemies.splice(j, 1);
+                    score += 100;
+
                 }
             }
         } 
@@ -538,6 +538,36 @@ function collision_consequence()
         }  
     }
 }
+
+function score_draw() 
+{
+    context.fillStyle = "black"
+    context.fillRect(canvas.width -190, canvas.height - 35, 200, 35)
+    context.fillStyle = "lightblue"; 
+    context.font = "24px Serif";
+    context.fillText("score: "+score, canvas.width -170 , canvas.height - 10);
+}
+
+let extraFlag = false; 
+
+function draw_bonus()
+{
+    if (extraFlag === true)
+    {
+        let extra_life = {x: 50, y: 200, width: heartImage.width, height: heartImage.height};
+        extra_lifer = context.drawImage(heartImage, extra_life.x, extra_life.y)
+        if (check_collision(extra_life, hero))
+        {
+            hero.hitpoints ++
+            extraFlag = false
+        }
+    }
+}
+function bonus()
+{
+    extraFlag = true
+}
+bonusInterval = setInterval(bonus, 6000)
 
 function enemies_move()
 {
@@ -638,6 +668,7 @@ function player_dead()
 
 function draw_dead_message()
 {
+
     let deadMessage = "Game Over, Press R to restart. Score: xxx";
 
     context.save();
@@ -667,6 +698,7 @@ function draw_dead_message()
     context.fillText(deadMessage, canvas.width / 2, canvas.height / 2);
 
     context.restore();
+
 }
 
 const heartImage = new Image();
@@ -693,6 +725,8 @@ function draw_game()
     enemies_draw();
     draw_life()
     bullets_draw();
+    score_draw()
+    draw_bonus()
 
     if(isPlayerdead)
     {
@@ -753,6 +787,7 @@ function initialize()
     } );
 
     runGame = setInterval(main_loop,1000/60)
+    bonusInterval = setInterval(bonus, 45000)
 }
 
 function spawn_enemies()
