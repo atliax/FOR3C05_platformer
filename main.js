@@ -1,4 +1,4 @@
-const DEBUG = false;
+const DEBUG = true;
 
 canvas = document.getElementById('mainCanvas');
 context = canvas.getContext('2d');
