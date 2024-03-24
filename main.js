@@ -508,12 +508,9 @@ function collision_consequence()
                 enemies[j].hitpoints--;
                 enemies[j].switchSprite("halfHealth")
                 if (enemies[j].hitpoints <= 0)
-
                 { 
-                enemies.splice(j, 1);
-                score += 100;
-
-                {
+                    enemies.splice(j, 1);
+                    score += 100;
                     numEnemies--;
                     enemies.splice(j, 1);
                     score += 100;
