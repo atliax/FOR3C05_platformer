@@ -24,9 +24,10 @@ const PLAYER_MAX_SPEED = 6;
 const PLAYER_GROUND_SPEED_MODIFIER = 0.25;
 const PLAYER_JUMP_SPEED = 10;
 
-const MAX_ENEMIES = 3;
-const ENEMY_SPAWN_INTERVAL = 5000;
+let MAX_ENEMIES = 3;
+let ENEMY_SPAWN_INTERVAL = 5000;
 let lastEnemySpawn;
+let difficulty = 1000
 
 const backgroundImage = new Image()
 const heartImage = new Image();
@@ -394,8 +395,12 @@ function restart_game()
     enemies.splice(0,numEnemies);
     numEnemies = 0;
     score = 0;
+    MAX_ENEMIES = 3;
+    ENEMY_SPAWN_INTERVAL = 5000
+    difficulty = 1000
     hero_bullet.splice(0,hero_bullet.length);
     enemy_bullet.splice(0,enemy_bullet.length);
+
 }
 
 function handle_keys()
@@ -535,6 +540,10 @@ function score_draw()
     context.font = "24px Serif";
     context.fillText("score: "+score, canvas.width -170 , canvas.height - 10);
     context.restore();
+    if (score >= difficulty){ENEMY_SPAWN_INTERVAL -= 500, difficulty += 1000};
+    if (score === 2000) MAX_ENEMIES = 4
+    if (score === 5000) MAX_ENEMIES = 6
+    if (score === 8000) MAX_ENEMIES = 12
 }
 
 function draw_bonus()
@@ -664,7 +673,7 @@ function draw_dead_message()
     context.font = "24px Serif";
 
     // stillingar fyrir boxið
-    context.fillStyle = "blue";
+    context.fillStyle = "grey";
     context.strokeStyle = "black";
     context.lineWidth = 2;
 
@@ -708,6 +717,7 @@ function draw_game()
     bullets_draw();
     score_draw()
     draw_bonus()
+    console.log(ENEMY_SPAWN_INTERVAL)
 
     if(isPlayerdead)
     {
