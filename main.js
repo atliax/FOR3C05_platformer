@@ -5,10 +5,8 @@ context = canvas.getContext('2d');
 addEventListener("load",initialize);
 
 let runGame;
-let extraFlag;
-let bonusInterval;
 let numEnemies;
-let isPlayerdead;
+let isHeroDead;
 
 let musicStarted = false;
 
@@ -21,10 +19,13 @@ const KEY_R = 82;
 let lastKeyUpCode = null
 
 const GRAVITY = 0.5;
-const PLAYER_ACCELERATION = 0.5;
-const PLAYER_MAX_SPEED = 6;
-const PLAYER_GROUND_SPEED_MODIFIER = 0.25;
-const PLAYER_JUMP_SPEED = 10;
+const HERO_ACCELERATION = 0.5;
+const HERO_MAX_SPEED = 6;
+const HERO_GROUND_SPEED_MODIFIER = 0.25;
+const HERO_JUMP_SPEED = 10;
+
+const HERO_BULLET_SPEED = -5;
+const ENEMY_BULLET_SPEED = 5;
 
 const DEFAULT_MAX_ENEMIES = 3;
 const DEFAULT_ENEMY_SPAWN_INTERVAL = 5000;
@@ -50,11 +51,15 @@ const heartImage = new Image();
 const heartBigImage = new Image();
 const brickTile = new Image();
 
-const levelWidth = 26;
-const levelHeight = 20;
-const levelScale = 32;
+let extraLife = [];
+const EXTRA_LIFE_INTERVAL = 45000;
+let lastExtraLife = 0;
 
-let levelData = [
+const LEVEL_WIDTH = 26;
+const LEVEL_HEIGHT = 20;
+const LEVEL_SCALE = 32;
+
+const levelData = [
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -86,6 +91,20 @@ const hero_bullet = [];
 
 let hero;
 
+const heroAnimations = {
+    idleLeft: {imageSrc: "Myndir/IDLE_L_2x.png", frameRate: 2},
+    idleRight: {imageSrc: "Myndir/IDLE_R_2x.png", frameRate: 2},
+    walkRight: {imageSrc: "Myndir/WALK_R_2x.png", frameRate: 4},
+    walkLeft: {imageSrc: "Myndir/WALK_L_2x.png", frameRate: 4},
+    shoot: {imageSrc: "Myndir/SHOOT_2x.png", frameRate: 2},
+    dead: {imageSrc: "Myndir/DEAD_2x.png", frameRate: 2}
+};
+
+const enemyAnimations = {
+    fullHealth: {imageSrc: "Myndir/EnemyP1Big.png",frameRate: 1},
+    halfHealth: {imageSrc: "Myndir/EnemyP2Big.png",frameRate: 1}
+};
+
 class HitBox
 {
     constructor(X,Y,W,H)
@@ -102,13 +121,12 @@ const heroBulletHitbox = new HitBox(0,0,18,23);
 const enemyHitbox = new HitBox(0,0,64,45);
 const enemyBulletHitbox = new HitBox(2,2,29,28);
 const defaultHitbox = new HitBox(0,0,1,1);
+const extraLifeHitbox = new HitBox(0,0,23,22);
 
-class Sprite 
+class Sprite
 {
     constructor({imageSrc, frameRate, frameBuffer = 4, scale = 1})
     {
-        this.x = canvas.width/ 2.3;
-        this.y = canvas.height;
         this.scale = scale
         this.image = new Image()
         this.frameRate = frameRate
@@ -130,18 +148,14 @@ class Sprite
 
     draw() 
     {
-        if(DEBUG)
+        if(DEBUG) // teiknar hitboxið
         {
             context.save();
-            //context.fillStyle = "tan"
-            //context.fillRect(this.x, this.y, this.width, this.height)
-
             context.strokeStyle = "cyan";
             context.lineWidth = 1;
             context.beginPath();
             context.rect(this.x+this.hitbox.X,this.y+this.hitbox.Y,this.hitbox.W,this.hitbox.H);
             context.stroke();
-
             context.restore();
         }
 
@@ -193,15 +207,17 @@ class Sprite
 
 class Hero extends Sprite
 {
-    constructor(imageSrc, frameRate, animations, scale = 2, hitbox)
+    constructor(imageSrc, frameRate, scale = 2, hitbox)
     {
         super({imageSrc, frameRate, scale });
 
-        this.speed = PLAYER_ACCELERATION;
+        this.speed = HERO_ACCELERATION;
 
-        this.y = canvas.height - 96;
-        this.groundSpeedModifier = PLAYER_GROUND_SPEED_MODIFIER;
-        this.maxSpeed = PLAYER_MAX_SPEED;
+        this.x = canvas.width/2.3;
+        this.y = canvas.height - (3*LEVEL_SCALE);
+
+        this.groundSpeedModifier = HERO_GROUND_SPEED_MODIFIER;
+        this.maxSpeed = HERO_MAX_SPEED;
 
         this.velocityX = 0;
         this.velocityY = 0;
@@ -210,7 +226,7 @@ class Hero extends Sprite
         this.lastshotTime = 0;
         this.hitpoints = 3
 
-        this.animations = animations
+        this.animations = heroAnimations;
 
         for (let key in this.animations) 
         {
@@ -259,17 +275,17 @@ class Hero extends Sprite
         {
             // engir árekstrar á uppleið
         }
-        else if(!isPlayerdead)
+        else if(!isHeroDead)
         {
-            let mapX  = Math.floor((newPosX+16)/levelScale);
-            let mapY  = Math.floor((newPosY+(2*levelScale))/levelScale);
-            let mapX3 = Math.floor(((newPosX-16)+(1.8*levelScale))/levelScale);
+            let mapX  = Math.floor((newPosX+16)/LEVEL_SCALE);
+            let mapY  = Math.floor((newPosY+(2*LEVEL_SCALE))/LEVEL_SCALE);
+            let mapX3 = Math.floor(((newPosX-16)+(1.8*LEVEL_SCALE))/LEVEL_SCALE);
 
 
             if(get_map_collision(mapX,mapY) ||
                get_map_collision(mapX3,mapY))
             {
-                newPosY = (Math.floor(newPosY/levelScale))*levelScale;
+                newPosY = (Math.floor(newPosY/LEVEL_SCALE))*LEVEL_SCALE;
                 this.velocityY = 0;
                 this.onGround = true;
             }
@@ -314,8 +330,7 @@ class Hero extends Sprite
         const currentTime = new Date().getTime();
         if(currentTime - this.lastshotTime > this.shootDelay)
         {
-            const bullet_speed = -5;
-            const bullet = new Bullet("Myndir/heroBulletBig.png", 1, this.x+(this.width*0.5), this.y, bullet_speed, heroBulletHitbox);
+            const bullet = new HeroBullet(this.x+(this.width*0.5), this.y);
             hero_bullet.push(bullet);
             this.lastshotTime = currentTime;
             heroShoot.play()
@@ -326,7 +341,7 @@ class Hero extends Sprite
     {
         if(this.velocityY == 0 && this.onGround)
         {
-            this.velocityY = -PLAYER_JUMP_SPEED;
+            this.velocityY = -HERO_JUMP_SPEED;
             this.onGround = false;
             heroJump.play()
         }
@@ -337,7 +352,7 @@ class Bullet extends Sprite
 {
     constructor(imageSrc, frameRate, x, y, speed, hitbox)
     {
-        super({imageSrc, frameRate, scale: 1 })//scale: 2.3 })
+        super({imageSrc, frameRate, scale: 1 })
         this.x = x;
         this.y = y;
         this.speed = speed;
@@ -350,9 +365,25 @@ class Bullet extends Sprite
     }
 }
 
+class HeroBullet extends Bullet
+{
+    constructor(X,Y)
+    {
+        super("Myndir/heroBulletBig.png", 1, X, Y, HERO_BULLET_SPEED, heroBulletHitbox);
+    }
+}
+
+class EnemyBullet extends Bullet
+{
+    constructor(X,Y)
+    {
+        super("Myndir/enemyBulletsBig.png", 4, X, Y, ENEMY_BULLET_SPEED, enemyBulletHitbox);
+    }
+}
+
 class Goblin extends Sprite
 {
-    constructor(imageSrc, frameRate, animations, scale = 2, hitbox )
+    constructor(imageSrc, frameRate, scale = 2, hitbox )
     {
         super({imageSrc, frameRate, scale,})
         this.y = 60;
@@ -364,7 +395,7 @@ class Goblin extends Sprite
         this.shootDelay = 1000;
         this.hitpoints = 2;
 
-        this.animations = animations
+        this.animations = enemyAnimations;
 
         for (let key in this.animations) 
         {
@@ -397,12 +428,22 @@ class Goblin extends Sprite
 
         if (document.hasFocus() && currentTime - this.lastshotTime > this.shootDelay)
         {
-            const bullet_speed = 5;
-            const bullet = new Bullet("Myndir/enemyBulletsBig.png", 4,  this.x, this.y+this.height, bullet_speed,enemyBulletHitbox);
+            const bullet = new EnemyBullet(this.x,this.y+this.height);
             enemy_bullet.push(bullet);
             this.lastshotTime = currentTime;
             goblinShoot.play()
         }
+    }
+}
+
+class ExtraLife extends Sprite
+{
+    constructor(X,Y)
+    {
+        super({imageSrc:"Myndir/heart.png",frameRate:1,scale:1});
+        this.x = X;
+        this.y = Y;
+        this.hitbox = extraLifeHitbox;
     }
 }
 
@@ -445,7 +486,7 @@ function restart_game()
     hero.velocityX = 0;
     hero.velocityY = 0;
     hero.hitpoints = 3;
-    isPlayerdead = false;
+    isHeroDead = false;
 
     hero_bullet.splice(0,hero_bullet.length);
     enemy_bullet.splice(0,enemy_bullet.length);
@@ -459,14 +500,17 @@ function restart_game()
     difficulty = DEFAULT_DIFFICULTY;
     lastEnemySpawn = get_timestamp()-enemySpawnInterval;
 
-    clearInterval(bonusInterval);
-    bonusInterval = setInterval(bonus, 45000)
-    extraFlag = false;
+    if(extraLife.length > 0)
+    {
+        extraLife.splice(0,1);
+    }
+
+    lastExtraLife = get_timestamp();
 }
 
 function handle_keys()
 {
-    if(isPlayerdead)
+    if(isHeroDead)
     {
         if(keyDown[KEY_R] == true)
         {
@@ -526,12 +570,12 @@ function get_map_collision(X, Y)
 {
     if(Y == 19)
         return true;
-    if(X < 0 || X >= levelWidth)
+    if(X < 0 || X >= LEVEL_WIDTH)
         return false;
-    if(Y < 0 || Y >= levelHeight)
+    if(Y < 0 || Y >= LEVEL_HEIGHT)
         return false;
 
-    if(levelData[Y * levelWidth + X] != 0)
+    if(levelData[Y * LEVEL_WIDTH + X] != 0)
         return true;
 
     return false;
@@ -595,6 +639,18 @@ function collision_consequence()
             }
         }  
     }
+
+    if(extraLife.length > 0)
+    {
+        if(hero.hitpoints < 3)
+        {
+            if(check_collision(extraLife[0],hero))
+            {
+                extraLife.splice(0,1);
+                hero.hitpoints++;
+            }
+        }
+    }
 }
 
 function draw_score()
@@ -616,23 +672,24 @@ function adjust_difficulty()
     if (score === 8000) maxEnemies = 12
 }
 
-function draw_bonus()
+function spawn_extra_life()
 {
-    if (extraFlag === true)
+    if(extraLife.length < 1)
     {
-        let extra_life = {x: 50, y: 200, width: heartImage.width, height: heartImage.height};
-        extra_lifer = context.drawImage(heartImage, extra_life.x, extra_life.y)
-        if (check_collision(extra_life, hero))
+        if(get_timestamp() - lastExtraLife > EXTRA_LIFE_INTERVAL)
         {
-            hero.hitpoints++
-            extraFlag = false
+            extraLife.push(new ExtraLife(50,200));
+            lastExtraLife = get_timestamp();
         }
     }
 }
 
-function bonus()
+function draw_bonus()
 {
-    extraFlag = true
+    if(extraLife.length > 0)
+    {
+        extraLife[0].draw();
+    }
 }
 
 function enemies_move()
@@ -698,15 +755,15 @@ function draw_background()
 {
     context.clearRect(0,0, canvas.width, canvas.height);
     context.drawImage(backgroundImage, 0,0 , canvas.width, canvas.height);
-    for(let y = 0; y < levelHeight; y++)
+    for(let y = 0; y < LEVEL_HEIGHT; y++)
     {
-        for(let x = 0; x < levelWidth; x++)
+        for(let x = 0; x < LEVEL_WIDTH; x++)
         {
-            let index = (y * levelWidth) + x;
+            let index = (y * LEVEL_WIDTH) + x;
 
             if(levelData[index] != 0)
             {
-                context.drawImage(brickTile,x*levelScale,y*levelScale);
+                context.drawImage(brickTile,x*LEVEL_SCALE,y*LEVEL_SCALE);
             }
         }
     }
@@ -715,7 +772,7 @@ function draw_background()
 function player_dead()
 {
     hero.switchSprite("dead");
-    isPlayerdead = true;
+    isHeroDead = true;
     heroDead.play()
 }
 
@@ -776,7 +833,7 @@ function draw_game()
     draw_score()
     draw_bonus()
 
-    if(isPlayerdead)
+    if(isHeroDead)
     {
         draw_dead_message();
     }
@@ -807,6 +864,7 @@ function main_loop(timestamp)
     adjust_difficulty();
 
     spawn_enemies();
+    spawn_extra_life();
     
     hero.move();
     hero.gravity();
@@ -817,7 +875,7 @@ function main_loop(timestamp)
     bullets_move(enemy_bullet);
     
     enemies_shoot();
-    
+
     collision_consequence();
 
     draw_game();
@@ -825,7 +883,7 @@ function main_loop(timestamp)
 
 function initialize()
 {
-    isPlayerdead = false;
+    isHeroDead = false;
     numEnemies = 0;
     lastEnemySpawn = 0;
     extraFlag = false;
@@ -842,17 +900,10 @@ function initialize()
     document.addEventListener("keydown",keydown);
     document.addEventListener("keyup",keyup);
 
-    hero = new Hero("Myndir/IDLE_L_2x.png", 2, animations = {
-        idleLeft: {imageSrc: "Myndir/IDLE_L_2x.png", frameRate: 2},
-        idleRight: {imageSrc: "Myndir/IDLE_R_2x.png", frameRate: 2},
-        walkRight: {imageSrc: "Myndir/WALK_R_2x.png", frameRate: 4},
-        walkLeft: {imageSrc: "Myndir/WALK_L_2x.png", frameRate: 4},
-        shoot: {imageSrc: "Myndir/SHOOT_2x.png", frameRate: 2},
-        dead: {imageSrc: "Myndir/DEAD_2x.png", frameRate: 2},
-    },1, heroHitbox );
+    hero = new Hero("Myndir/IDLE_L_2x.png", 2, 1, heroHitbox );
 
     runGame = setInterval(main_loop,1000/60)
-    bonusInterval = setInterval(bonus, 45000)
+    lastExtraLife = get_timestamp();
 }
 
 function spawn_enemies()
@@ -864,10 +915,7 @@ function spawn_enemies()
 
     if(get_timestamp() - lastEnemySpawn > enemySpawnInterval)
     {
-        enemies.push(new Goblin("Myndir/EnemyP1Big.png", 1, animations = {
-            fullHealth: {imageSrc: "Myndir/EnemyP1Big.png",frameRate: 1},
-            halfHealth: {imageSrc: "Myndir/EnemyP2Big.png",frameRate: 1},
-        },1,enemyHitbox));
+        enemies.push(new Goblin("Myndir/EnemyP1Big.png", 1, 1, enemyHitbox));
         lastEnemySpawn = get_timestamp();
     }
 }
