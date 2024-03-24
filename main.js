@@ -274,7 +274,7 @@ class Hero extends Sprite
         if(currentTime - this.lastshotTime > this.shootDelay)
         {
             const bullet_speed = -5;
-            const bullet = new Bullet("Myndir/heroBullet.png", 1, this.x+(this.width*0.5), this.y, bullet_speed);
+            const bullet = new Bullet("Myndir/heroBulletBig.png", 1, this.x+(this.width*0.5), this.y, bullet_speed);
             hero_bullet.push(bullet);
             this.lastshotTime = currentTime;
         }
@@ -294,7 +294,7 @@ class Bullet extends Sprite
 {
     constructor(imageSrc, frameRate, x, y, speed)
     {
-        super({imageSrc, frameRate, scale: 2.3 })
+        super({imageSrc, frameRate, scale: 1 })//scale: 2.3 })
         this.x = x;
         this.y = y;
         this.speed = speed;
@@ -353,7 +353,7 @@ class Goblin extends Sprite
         if (currentTime - this.lastshotTime > this.shootDelay)
         {
             const bullet_speed = 5;
-            const bullet = new Bullet("Myndir/enemyBullets.png", 4,  this.x, this.y+this.height, bullet_speed);
+            const bullet = new Bullet("Myndir/enemyBulletsBig.png", 4,  this.x, this.y+this.height, bullet_speed);
             enemy_bullet.push(bullet);
             this.lastshotTime = currentTime;
         }
@@ -779,14 +779,14 @@ function initialize()
     document.addEventListener("keydown",keydown);
     document.addEventListener("keyup",keyup);
 
-    hero = new Hero("Myndir/idleLeft.png", 2, animations = {
-        idleLeft: {imageSrc: "Myndir/idleLeft.png", frameRate: 2},
-        idleRight: {imageSrc: "Myndir/idleRight.png", frameRate: 2},
-        walkRight: {imageSrc: "Myndir/walkRight.png", frameRate: 4},
-        walkLeft: {imageSrc: "Myndir/walkLeft.png", frameRate: 4},
-        shoot: {imageSrc: "Myndir/shoot.png", frameRate: 2},
-        dead: {imageSrc: "Myndir/dead.png", frameRate: 1},
-    } );
+    hero = new Hero("Myndir/idleLeftBig.png", 2, animations = {
+        idleLeft: {imageSrc: "Myndir/idleLeftBig.png", frameRate: 2},
+        idleRight: {imageSrc: "Myndir/idleRightBig.png", frameRate: 2},
+        walkRight: {imageSrc: "Myndir/walkRightBig.png", frameRate: 4},
+        walkLeft: {imageSrc: "Myndir/walkLeftBig.png", frameRate: 4},
+        shoot: {imageSrc: "Myndir/shootBig.png", frameRate: 2},
+        dead: {imageSrc: "Myndir/deadBig.png", frameRate: 1},
+    },1 );
 
     runGame = setInterval(main_loop,1000/60)
     bonusInterval = setInterval(bonus, 45000)
@@ -801,10 +801,10 @@ function spawn_enemies()
 
     if(get_timestamp() - lastEnemySpawn > ENEMY_SPAWN_INTERVAL)
     {
-        enemies.push(new Goblin("Myndir/EnemyP1.png", 1, animations = {
-            fullHealth: {imageSrc: "Myndir/EnemyP1.png",frameRate: 1},
-            halfHealth: {imageSrc: "Myndir/EnemyP2.png",frameRate: 1},
-        }));
+        enemies.push(new Goblin("Myndir/EnemyP1Big.png", 1, animations = {
+            fullHealth: {imageSrc: "Myndir/EnemyP1Big.png",frameRate: 1},
+            halfHealth: {imageSrc: "Myndir/EnemyP2Big.png",frameRate: 1},
+        },1));
         lastEnemySpawn = get_timestamp();
     }
 }
