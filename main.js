@@ -33,10 +33,12 @@ let difficulty = 1000
 
 const musicTrack1 = new Audio();
 const heroDead = new Audio(); heroDead.src = "Music/heroDead.mp4";
-const heroShoot = new Audio(); heroShoot.src ="Music/heroShoot.mp3";heroShoot.volume = 0.4;
+const heroShoot = new Audio(); heroShoot.src ="Music/heroShoot.mp3"; heroShoot.volume = 0.4;
 const bulletHit = new Audio(); bulletHit.src = "Music/bulletHit.mp3";
-const goblinShoot = new Audio(); goblinShoot.src = "Music/goblinShoot.mp3";goblinShoot.volume = 0.3
-const heroDamage = new Audio(); heroDamage.src = "Music/heroDamage.wav"
+const goblinShoot = new Audio(); goblinShoot.src = "Music/goblinShoot.mp3"; goblinShoot.volume = 0.3;
+const heroDamage = new Audio(); heroDamage.src = "Music/heroDamage.wav";
+const heroWalk = new Audio(); heroWalk.src = "Music/walk.flac"; heroWalk.volume = 0.2;
+const heroJump = new Audio(); heroJump.src = "Music/jump.ogg"; heroJump.volume = 0.3
 
 
 const backgroundImage = new Image()
@@ -68,7 +70,7 @@ let levelData = [
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 ];
 
 const keys = [];
@@ -293,6 +295,7 @@ class Hero extends Sprite
         {
             this.velocityY = -PLAYER_JUMP_SPEED;
             this.onGround = false;
+            heroJump.play()
         }
     }
 }
@@ -416,6 +419,8 @@ function restart_game()
     difficulty = 1000
     hero_bullet.splice(0,hero_bullet.length);
     enemy_bullet.splice(0,enemy_bullet.length);
+    clearInterval(bonusInterval);
+    extraFlag = false;
 
 }
 
@@ -434,17 +439,20 @@ function handle_keys()
     {
         hero.walk(-hero.speed);
         hero.switchSprite("walkLeft")
+        heroWalk.play()
     }
 
     if(keys[KEY_RIGHT] == true)
     {
         hero.walk(hero.speed);
         hero.switchSprite("walkRight")
+        heroWalk.play()
     }
 
     if(keys[KEY_UP] == true)
     {
         hero.jump();
+        heroWalk.pause()
     }
 
     if(keys[KEY_SPACE] == true)
@@ -777,7 +785,7 @@ function initialize()
     lastEnemySpawn = 0;
     extraFlag = false;
 
-    musicTrack1.src = "Music/track1.mp3";
+    //musicTrack1.src = "Music/track1.mp3";
     musicTrack1.loop = true;
     musicTrack1.volume = 0.3
 
@@ -797,7 +805,6 @@ function initialize()
         shoot: {imageSrc: "Myndir/SHOOT_2x.png", frameRate: 2},
         dead: {imageSrc: "Myndir/DEAD_2x.png", frameRate: 2},
     },1 );
-
     runGame = setInterval(main_loop,1000/60)
     bonusInterval = setInterval(bonus, 45000)
 }
