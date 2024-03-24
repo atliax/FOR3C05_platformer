@@ -1,4 +1,4 @@
-const DEBUG = false;
+const DEBUG = true;
 
 canvas = document.getElementById('mainCanvas');
 context = canvas.getContext('2d');
@@ -234,7 +234,7 @@ class Hero extends Sprite
             if(get_map_collision(mapX,mapY) ||
                get_map_collision(mapX3,mapY))
             {
-                newPosY = (Math.floor(newPosY/levelScale))*levelScale+4;
+                newPosY = (Math.floor(newPosY/levelScale))*levelScale;
                 this.velocityY = 0;
                 this.onGround = true;
             }
@@ -789,13 +789,13 @@ function initialize()
     document.addEventListener("keydown",keydown);
     document.addEventListener("keyup",keyup);
 
-    hero = new Hero("Myndir/idleLeftBig.png", 2, animations = {
-        idleLeft: {imageSrc: "Myndir/idleLeftBig.png", frameRate: 2},
-        idleRight: {imageSrc: "Myndir/idleRightBig.png", frameRate: 2},
-        walkRight: {imageSrc: "Myndir/walkRightBig.png", frameRate: 4},
-        walkLeft: {imageSrc: "Myndir/walkLeftBig.png", frameRate: 4},
-        shoot: {imageSrc: "Myndir/shootBig.png", frameRate: 2},
-        dead: {imageSrc: "Myndir/deadBig.png", frameRate: 1},
+    hero = new Hero("Myndir/IDLE_L_2x.png", 2, animations = {
+        idleLeft: {imageSrc: "Myndir/IDLE_L_2x.png", frameRate: 2},
+        idleRight: {imageSrc: "Myndir/IDLE_R_2x.png", frameRate: 2},
+        walkRight: {imageSrc: "Myndir/WALK_R_2x.png", frameRate: 4},
+        walkLeft: {imageSrc: "Myndir/WALK_L_2x.png", frameRate: 4},
+        shoot: {imageSrc: "Myndir/SHOOT_2x.png", frameRate: 2},
+        dead: {imageSrc: "Myndir/DEAD_2x.png", frameRate: 2},
     },1 );
 
     runGame = setInterval(main_loop,1000/60)
