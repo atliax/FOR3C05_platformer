@@ -10,6 +10,8 @@ let bonusInterval;
 let numEnemies;
 let isPlayerdead;
 
+let musicStarted = false;
+
 const KEY_LEFT = 37;
 const KEY_RIGHT = 39;
 const KEY_UP = 38;
@@ -371,6 +373,11 @@ function keydown(event)
        event.keyCode == KEY_R)
     {
         keys[event.keyCode] = true;
+    }
+
+    if(musicStarted == false)
+    {
+        musicTrack1.play();
     }
 }
 
@@ -780,8 +787,6 @@ function initialize()
         shoot: {imageSrc: "Myndir/shoot.png", frameRate: 2},
         dead: {imageSrc: "Myndir/dead.png", frameRate: 1},
     } );
-
-    musicTrack1.play();
 
     runGame = setInterval(main_loop,1000/60)
     bonusInterval = setInterval(bonus, 45000)
