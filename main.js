@@ -2,6 +2,8 @@ canvas = document.getElementById('mainCanvas');
 context = canvas.getContext('2d');
 addEventListener("load",initialize);
 
+let runGame;
+
 //key virkni sem ég fann á netinu
 const KEY_LEFT = 37;
 const KEY_RIGHT = 39;
@@ -52,12 +54,6 @@ const enemy_bullet = [];
 const hero_bullet = [];
 
 let hero;
-
-let startTimestamp;
-let frameTimeLast;
-let frameTimeDelta;
-let targetFrameTime = 0.02;
-let frameAccumulator = 0;
 
 function get_timestamp()
 {
@@ -204,11 +200,11 @@ class Sprite
     
 }
 
-const GRAVITY = 20;
-const PLAYER_ACCELERATION = 15;
-const PLAYER_MAX_SPEED = 10;
-const PLAYER_GROUND_SPEED_MODIFIER = 10;
-const PLAYER_JUMP_SPEED = 500;
+const GRAVITY = 0.5;
+const PLAYER_ACCELERATION = 0.5;
+const PLAYER_MAX_SPEED = 6;
+const PLAYER_GROUND_SPEED_MODIFIER = 0.25;
+const PLAYER_JUMP_SPEED = 10;
 
 class Hero extends Sprite
 {
@@ -259,7 +255,7 @@ class Hero extends Sprite
             }
         }
 
-        this.velocityX += speedchange * frameTimeDelta;
+        this.velocityX += speedchange;
 
         if(this.velocityX > this.maxSpeed)
         {
@@ -317,7 +313,7 @@ class Hero extends Sprite
     {
         if(!this.onGround)
         {
-            this.velocityY += GRAVITY * frameTimeDelta;
+            this.velocityY += GRAVITY;
         }
     }
 
@@ -325,7 +321,7 @@ class Hero extends Sprite
     {
         if(this.onGround)
         {
-            this.velocityX = this.velocityX + (-(3*this.velocityX)*frameTimeDelta);
+            this.velocityX = this.velocityX - ((1/3)*this.velocityX);
             if(Math.abs(this.velocityX) < 0.1)
             {
                 this.velocityX = 0;
@@ -338,7 +334,7 @@ class Hero extends Sprite
         const currentTime = new Date().getTime();
         if(currentTime - this.lastshotTime > this.shootDelay)
         {
-            const bullet_speed = -150;
+            const bullet_speed = -5;
             const bullet = new Bullet("myndir/heroBullet.png", 1, this.x+(this.width*0.5), this.y, bullet_speed);
             hero_bullet.push(bullet);
             this.lastshotTime = currentTime;
@@ -349,7 +345,7 @@ class Hero extends Sprite
     {
         if(this.velocityY == 0 && this.onGround)
         {
-            this.velocityY = -PLAYER_JUMP_SPEED * frameTimeDelta;
+            this.velocityY = -PLAYER_JUMP_SPEED;
             this.onGround = false;
         }
     }
@@ -376,13 +372,11 @@ class Bullet extends Sprite
         this.x = x;
         this.y = y;
         this.speed = speed;
-        //this.width = 10;
-        //this.height = 10;
     }
 
     move()
     {
-        this.y += this.speed * frameTimeDelta;
+        this.y += this.speed;
     }
 
     /*draw()
@@ -402,7 +396,7 @@ class Goblin extends Sprite
         this.y = 60;
         this.width = 200;
         this.height = 35;
-        this.speed = 60;
+        this.speed = 2;
         this.lastshotTime = 0;
         this.shootDelay = 1000;
         this.hitpoints = 2;
@@ -420,7 +414,7 @@ class Goblin extends Sprite
 
     move()
     {
-        this.x += this.speed * frameTimeDelta;
+        this.x += this.speed;
 
         if (this.x+this.width >= canvas.width)
         {
@@ -448,7 +442,7 @@ class Goblin extends Sprite
 
         if (currentTime - this.lastshotTime > this.shootDelay)
         {
-            const bullet_speed = 150;
+            const bullet_speed = 5;
             const bullet = new Bullet("Myndir/enemyBullets.png", 4,  this.x, this.y+this.height, bullet_speed);
             enemy_bullet.push(bullet);
             this.lastshotTime = currentTime;
@@ -650,7 +644,7 @@ function draw_game()
     context.fillStyle = "white";
     context.fillText(locString,100,10);
 
-    let velString = "".concat("velX:",(hero.velocityX*frameTimeDelta).toString(),", velY:",(hero.velocityY*frameTimeDelta).toString());
+    let velString = "".concat("velX:",(hero.velocityX).toString(),", velY:",(hero.velocityY).toString());
     context.fillStyle = "white";
     context.fillText(velString,100,20);
 
@@ -663,43 +657,25 @@ function draw_game()
 function main_loop(timestamp)
 {
     if (isPlayerdead) return;
-    window.requestAnimationFrame(main_loop);  
-//    if (timestamp - lastTimestamp  < timestep) return;
-
-//    lastTimestamp =  timestamp
-
-    let frameTimeCurrent = get_timestamp();
-    frameTimeDelta = (frameTimeCurrent - frameTimeLast)/1000;
-    frameTimeLast = frameTimeCurrent;
-    frameAccumulator += frameTimeDelta;
 
     handle_keys();
 
-    while(frameAccumulator > targetFrameTime)
-    {
-        hero.move();
-        hero.gravity();
-        hero.drag();
+    hero.move();
+    hero.gravity();
+    hero.drag();
     
-        enemies_move();
-        bullets_move();
+    enemies_move();
+    bullets_move();
     
-        enemies_shoot();
+    enemies_shoot();
     
-        collision_consequence();
-        frameAccumulator -= targetFrameTime;
-    }
+    collision_consequence();
 
     draw_game();
 }
 
 function initialize()
 {
-    startTimestamp = get_timestamp();
-    frameTimeDelta = 0.017;
-    frameTimeLast = get_timestamp();
-    frameTimeCurrent = get_timestamp();
-
     backgroundImage.src = "Myndir/Bar.jpg" // bara placeholder mögulega
     brickTile.src = "Myndir/tileBrick.png";
     document.addEventListener("keydown",keydown);
@@ -720,5 +696,5 @@ function initialize()
         halfHealth: {imageSrc: "Myndir/EnemyP2.png",frameRate: 1},
     }));
 
-    requestAnimationFrame(main_loop);
+    runGame = setInterval(main_loop,1000/60)
 }
