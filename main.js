@@ -535,11 +535,13 @@ function collision_consequence()
 
 function score_draw() 
 {
+    context.save();
     context.fillStyle = "black"
     context.fillRect(canvas.width -190, canvas.height - 35, 200, 35)
     context.fillStyle = "lightblue"; 
     context.font = "24px Serif";
     context.fillText("score: "+score, canvas.width -170 , canvas.height - 10);
+    context.restore();
 }
 
 let extraFlag = false; 
