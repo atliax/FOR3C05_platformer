@@ -1,3 +1,5 @@
+const DEBUG = true;
+
 canvas = document.getElementById('mainCanvas');
 context = canvas.getContext('2d');
 addEventListener("load",initialize);
@@ -26,6 +28,8 @@ let MAX_ENEMIES = 3;
 let ENEMY_SPAWN_INTERVAL = 5000;
 let lastEnemySpawn;
 let difficulty = 1000
+
+const musicTrack1 = new Audio();
 
 const backgroundImage = new Image()
 const heartImage = new Image();
@@ -57,9 +61,6 @@ let levelData = [
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 ];
-
-//maxFPS = hve hraður leikurinn er. 
-//var lastTimestamp = 0, maxFPS = 60, timestep = 1000 / maxFPS;
 
 const keys = [];
 
@@ -94,8 +95,13 @@ class Sprite
 
     draw() 
     {
-        context.fillStyle = "tan"
-        context.fillRect(this.x, this.y, this.width, this.height)
+        if(DEBUG)
+        {
+            context.save();
+            context.fillStyle = "tan"
+            context.fillRect(this.x, this.y, this.width, this.height)
+            context.restore();
+        }
         if (!this.image) return
 
         const cropbox = 
@@ -368,7 +374,6 @@ function keydown(event)
     }
 }
 
-//key virkni sem ég fann á netinu
 function keyup(event)
 {
     if(event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT ||
@@ -379,7 +384,6 @@ function keyup(event)
         lastKeyUpCode = event.keyCode;
     }
 }
-
 
 function restart_game()
 {
@@ -396,6 +400,9 @@ function restart_game()
     MAX_ENEMIES = 3;
     ENEMY_SPAWN_INTERVAL = 5000
     difficulty = 1000
+    hero_bullet.splice(0,hero_bullet.length);
+    enemy_bullet.splice(0,enemy_bullet.length);
+
 }
 
 function handle_keys()
@@ -593,40 +600,28 @@ function enemies_shoot()
     }
 }
 
-function bullets_move()
+function bullets_move(array)
 {
-    if(enemy_bullet.length > 0)
+    if(array.length > 0)
     {
-        for (let i = 0; i < enemy_bullet.length; i++)
+        for (let i = 0; i < array.length; i++)
         {
-            enemy_bullet[i].move();
-        }
-    }
-
-    if(hero_bullet.length > 0)
-    {
-        for (let i = 0; i < hero_bullet.length; i++)
-        {
-            hero_bullet[i].move();
+            array[i].move();
+            if(array[i].y > canvas.height || array[i].y < 0)
+            {
+                array.splice(i,1);
+            }
         }
     }
 }
 
-function bullets_draw()
+function bullets_draw(array)
 {
-    if(enemy_bullet.length > 0)
+    if(array.length > 0)
     {
-        for (let i = 0; i < enemy_bullet.length; i++)
+        for (let i = 0; i < array.length; i++)
         {
-            enemy_bullet[i].draw();
-        }
-    }
-
-    if(hero_bullet.length > 0)
-    {
-        for (let i = 0; i < hero_bullet.length; i++)
-        {
-            hero_bullet[i].draw();
+            array[i].draw();
         }
     }
 }
@@ -709,7 +704,8 @@ function draw_game()
     hero.draw();
     enemies_draw();
     draw_life()
-    bullets_draw();
+    bullets_draw(hero_bullet);
+    bullets_draw(enemy_bullet);
     score_draw()
     draw_bonus()
     console.log(ENEMY_SPAWN_INTERVAL)
@@ -718,19 +714,24 @@ function draw_game()
     {
         draw_dead_message();
     }
+
+    if(DEBUG)
+    {
+        context.save();
+        let locString = "".concat("X:",hero.x.toString(),", Y:",hero.y.toString());
+        context.fillStyle = "white";
+        context.fillText(locString,100,10);
     
-    let locString = "".concat("X:",hero.x.toString(),", Y:",hero.y.toString());
-    context.fillStyle = "white";
-    context.fillText(locString,100,10);
-
-    let velString = "".concat("velX:",(hero.velocityX).toString(),", velY:",(hero.velocityY).toString());
-    context.fillStyle = "white";
-    context.fillText(velString,100,20);
-
-    context.beginPath();
-    context.fillStyle = "pink";
-    context.arc(hero.x,hero.y,4,0,2*Math.PI);
-    context.fill();
+        let velString = "".concat("velX:",(hero.velocityX).toString(),", velY:",(hero.velocityY).toString());
+        context.fillStyle = "white";
+        context.fillText(velString,100,20);
+    
+        context.beginPath();
+        context.fillStyle = "pink";
+        context.arc(hero.x,hero.y,4,0,2*Math.PI);
+        context.fill();
+        context.restore();
+    }
 }
 
 function main_loop(timestamp)
@@ -744,7 +745,8 @@ function main_loop(timestamp)
     hero.drag();
     
     enemies_move();
-    bullets_move();
+    bullets_move(hero_bullet);
+    bullets_move(enemy_bullet);
     
     enemies_shoot();
     
@@ -759,6 +761,9 @@ function initialize()
     numEnemies = 0;
     lastEnemySpawn = 0;
     extraFlag = false;
+
+    musicTrack1.src = "Music/track1.mp3";
+    musicTrack1.loop = true;
 
     backgroundImage.src = "Myndir/Bar.jpg" // bara placeholder mögulega
     brickTile.src = "Myndir/tileBrick.png";
@@ -775,6 +780,8 @@ function initialize()
         shoot: {imageSrc: "Myndir/shoot.png", frameRate: 2},
         dead: {imageSrc: "Myndir/dead.png", frameRate: 1},
     } );
+
+    musicTrack1.play();
 
     runGame = setInterval(main_loop,1000/60)
     bonusInterval = setInterval(bonus, 45000)
