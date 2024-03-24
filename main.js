@@ -638,12 +638,34 @@ function player_dead()
 
 function draw_dead_message()
 {
+    let deadMessage = "Game Over, Press R to restart. Score: xxx";
+
     context.save();
+
+    // stillingar fyrir textann
     context.textBaseline = "middle";
     context.textAlign = "center";
-    context.fillStyle = "red"; 
     context.font = "24px Serif";
-    context.fillText("Game Over, Press R to restart. Score: xxx", canvas.width / 2, canvas.height / 2);
+
+    // stillingar fyrir boxið
+    context.fillStyle = "blue";
+    context.strokeStyle = "black";
+    context.lineWidth = 2;
+
+    // mæling á textanum til að stilla stærðina á boxinu
+    let boxWidth = context.measureText(deadMessage).width + 20;
+    let boxHeight = 46;
+
+    // teikna boxið
+    context.beginPath();
+    context.rect((canvas.width/2)-(boxWidth/2),(canvas.height/2)-(boxHeight/2)-1,boxWidth,boxHeight);
+    context.fill();
+    context.stroke();
+
+    // teikna textann
+    context.fillStyle = "red"; 
+    context.fillText(deadMessage, canvas.width / 2, canvas.height / 2);
+
     context.restore();
 }
 
