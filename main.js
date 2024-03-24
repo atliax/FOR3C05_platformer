@@ -3,13 +3,20 @@ context = canvas.getContext('2d');
 addEventListener("load",initialize);
 
 let runGame;
-let bonusInterval
+
+let bonusInterval;
+let numEnemies;
+
 const KEY_LEFT = 37;
 const KEY_RIGHT = 39;
 const KEY_UP = 38;
 const KEY_DOWN = 40;
 const KEY_SPACE = 32;
 let lastKeyUpCode = null
+
+const MAX_ENEMIES = 3;
+const ENEMY_SPAWN_INTERVAL = 5000;
+let lastEnemySpawn;
 
 const backgroundImage = new Image()
 
@@ -77,6 +84,20 @@ function keyup(event)
         keys[event.keyCode] = false;
         lastKeyUpCode = event.keyCode;
     }
+}
+
+
+function restart_game()
+{
+    hero.switchSprite("idleRight");
+    hero.x = canvas.width/2.3;
+    hero.y = canvas.height - 96;
+    hero.velocityX = 0;
+    hero.velocityY = 0;
+    hero.hitpoints = 3;
+    isPlayerdead = false;
+    enemies.splice(0,numEnemies);
+    numEnemies = 0;
 }
 
 function handle_keys()
@@ -337,7 +358,7 @@ class Hero extends Sprite
         if(currentTime - this.lastshotTime > this.shootDelay)
         {
             const bullet_speed = -5;
-            const bullet = new Bullet("myndir/heroBullet.png", 1, this.x+(this.width*0.5), this.y, bullet_speed);
+            const bullet = new Bullet("Myndir/heroBullet.png", 1, this.x+(this.width*0.5), this.y, bullet_speed);
             hero_bullet.push(bullet);
             this.lastshotTime = currentTime;
         }
@@ -394,9 +415,9 @@ class Goblin extends Sprite
     constructor(imageSrc, frameRate, animations, scale = 2 )
     {
         super({imageSrc, frameRate, scale,})
-        this.x = Math.random()*15;
         this.y = 60;
         this.width = 200;
+        this.x = Math.random()*(canvas.width-this.width);
         this.height = 35;
         this.speed = 2;
         this.lastshotTime = 0;
@@ -411,7 +432,7 @@ class Goblin extends Sprite
             image.src = this.animations[key].imageSrc
             this.animations[key].image = image
         }
-
+        numEnemies++;
     }
 
     move()
@@ -487,9 +508,16 @@ function collision_consequence()
                 enemies[j].hitpoints--;
                 enemies[j].switchSprite("halfHealth")
                 if (enemies[j].hitpoints <= 0)
+
                 { 
                 enemies.splice(j, 1);
                 score += 100;
+
+                {
+                    numEnemies--;
+                    enemies.splice(j, 1);
+                    score += 100;
+
                 }
             }
         } 
@@ -640,9 +668,37 @@ function player_dead()
 
 function draw_dead_message()
 {
-    context.fillStyle = "red"; 
+
+    let deadMessage = "Game Over, Press R to restart. Score: xxx";
+
+    context.save();
+
+    // stillingar fyrir textann
+    context.textBaseline = "middle";
+    context.textAlign = "center";
     context.font = "24px Serif";
-    context.fillText("Game Over, Press R to restart. Score: xxx", canvas.width / 3, canvas.height / 2);
+
+    // stillingar fyrir boxið
+    context.fillStyle = "blue";
+    context.strokeStyle = "black";
+    context.lineWidth = 2;
+
+    // mæling á textanum til að stilla stærðina á boxinu
+    let boxWidth = context.measureText(deadMessage).width + 20;
+    let boxHeight = 46;
+
+    // teikna boxið
+    context.beginPath();
+    context.rect((canvas.width/2)-(boxWidth/2),(canvas.height/2)-(boxHeight/2)-1,boxWidth,boxHeight);
+    context.fill();
+    context.stroke();
+
+    // teikna textann
+    context.fillStyle = "red"; 
+    context.fillText(deadMessage, canvas.width / 2, canvas.height / 2);
+
+    context.restore();
+
 }
 
 const heartImage = new Image();
@@ -695,6 +751,8 @@ function main_loop(timestamp)
 {
     handle_keys();
 
+    spawn_enemies();
+    
     hero.move();
     hero.gravity();
     hero.drag();
@@ -711,6 +769,9 @@ function main_loop(timestamp)
 
 function initialize()
 {
+    numEnemies = 0;
+    lastEnemySpawn = 0;
+
     backgroundImage.src = "Myndir/Bar.jpg" // bara placeholder mögulega
     brickTile.src = "Myndir/tileBrick.png";
     document.addEventListener("keydown",keydown);
@@ -725,12 +786,23 @@ function initialize()
         dead: {imageSrc: "Myndir/dead.png", frameRate: 1},
     } );
 
-    //bara til að testa
-    enemies.push(new Goblin("Myndir/EnemyP1.png", 1, animations = {
-        fullHealth: {imageSrc: "Myndir/EnemyP1.png",frameRate: 1},
-        halfHealth: {imageSrc: "Myndir/EnemyP2.png",frameRate: 1},
-    }));
-
     runGame = setInterval(main_loop,1000/60)
     bonusInterval = setInterval(bonus, 45000)
+}
+
+function spawn_enemies()
+{
+    if(numEnemies >= MAX_ENEMIES)
+    {
+        return;
+    }
+
+    if(get_timestamp() - lastEnemySpawn > ENEMY_SPAWN_INTERVAL)
+    {
+        enemies.push(new Goblin("Myndir/EnemyP1.png", 1, animations = {
+            fullHealth: {imageSrc: "Myndir/EnemyP1.png",frameRate: 1},
+            halfHealth: {imageSrc: "Myndir/EnemyP2.png",frameRate: 1},
+        }));
+        lastEnemySpawn = get_timestamp();
+    }
 }
