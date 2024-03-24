@@ -101,6 +101,7 @@ function restart_game()
     isPlayerdead = false;
     enemies.splice(0,numEnemies);
     numEnemies = 0;
+    score = 0;
 }
 
 function handle_keys()
