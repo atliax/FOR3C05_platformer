@@ -229,9 +229,9 @@ class Hero extends Sprite
         }
         else if(!isPlayerdead)
         {
-            let mapX  = Math.floor((newPosX)/levelScale);
-            let mapY  = Math.floor((newPosY+(2*levelScale))/levelScale);
-            let mapX3 = Math.floor(((newPosX-16)+(1.8*levelScale))/levelScale);
+            let mapX  = Math.floor((newPosX + 5) / levelScale);
+            let mapY  = Math.floor((newPosY + (2 * levelScale)) / levelScale);
+            let mapX3 = Math.floor(((newPosX - 16) + (1.8 * levelScale)) / levelScale);
 
             if(get_map_collision(mapX,mapY) ||
                get_map_collision(mapX3,mapY))
@@ -244,15 +244,18 @@ class Hero extends Sprite
 
         this.x = newPosX;
         this.y = newPosY;
-
+        if (this.y > 544)
+        {
+            this.y = 544
+        }
         if(this.x > canvas.width)
         {
-            this.x -= canvas.width+this.width;
+            this.x -= canvas.width+50;
         }
 
         if(this.x < (0-this.width))
         {
-            this.x += canvas.width+this.width;
+            this.x += canvas.width+50;
         }
     }
 
@@ -488,7 +491,7 @@ function handle_keys()
     }
 }
 
-function get_map_collision(X,Y)
+function get_map_collision(X, Y)
 {
     if(X < 0 || X >= levelWidth)
         return false;
@@ -737,8 +740,6 @@ function draw_game()
     bullets_draw(enemy_bullet);
     score_draw()
     draw_bonus()
-    console.log(ENEMY_SPAWN_INTERVAL)
-
     if(isPlayerdead)
     {
         draw_dead_message();
