@@ -785,7 +785,7 @@ function initialize()
     lastEnemySpawn = 0;
     extraFlag = false;
 
-    //musicTrack1.src = "Music/track1.mp3";
+    musicTrack1.src = "Music/track1.mp3";
     musicTrack1.loop = true;
     musicTrack1.volume = 0.3
 
