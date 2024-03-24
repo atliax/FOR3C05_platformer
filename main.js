@@ -746,5 +746,6 @@ function spawn_enemies()
             fullHealth: {imageSrc: "Myndir/EnemyP1.png",frameRate: 1},
             halfHealth: {imageSrc: "Myndir/EnemyP2.png",frameRate: 1},
         }));
+        lastEnemySpawn = get_timestamp();
     }
 }
