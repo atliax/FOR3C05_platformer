@@ -778,7 +778,6 @@ function initialize()
 
     runGame = setInterval(main_loop,1000/60)
     bonusInterval = setInterval(bonus, 45000)
-    bonusInterval = setInterval(bonus, 6000)
 }
 
 function spawn_enemies()
