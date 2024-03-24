@@ -40,7 +40,6 @@ const heroDamage = new Audio(); heroDamage.src = "Music/heroDamage.wav";
 const heroWalk = new Audio(); heroWalk.src = "Music/walk.flac"; heroWalk.volume = 0.2;
 const heroJump = new Audio(); heroJump.src = "Music/jump.ogg"; heroJump.volume = 0.1
 
-
 const backgroundImage = new Image()
 const heartImage = new Image();
 const heartBigImage = new Image();
@@ -70,10 +69,10 @@ let levelData = [
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 ];
 
-const keys = [];
+const keyDown = [];
 
 const enemies = [];
 let score = 0
@@ -97,6 +96,7 @@ class Sprite
             this.width = (this.image.width / frameRate) * this.scale
             this.height = (this.image.height) * this.scale
         }
+
         this.image.src = imageSrc
         
         this.currentFrame = 0
@@ -113,7 +113,9 @@ class Sprite
             context.fillRect(this.x, this.y, this.width, this.height)
             context.restore();
         }
-        if (!this.image) return
+
+        if (!this.image)
+            return
 
         const cropbox = 
         {
@@ -122,6 +124,7 @@ class Sprite
             width: this.image.width / this.frameRate,  
             height: this.image.height,
         }
+
         context.drawImage(
             this.image,
             cropbox.x,
@@ -136,6 +139,7 @@ class Sprite
             this.animation()
         
     }
+
     switchSprite(key) 
     {
         if (this.image === this.animations[key].image) return
@@ -144,24 +148,20 @@ class Sprite
         this.frameRate = this.animations[key].frameRate
     }
 
-
-    
     animation()
     {
         this.elapsedFrames++
 
         if(this.elapsedFrames % this.frameBuffer === 0)
         {
-        if(this.currentFrame < this.frameRate - 1) this.currentFrame++
-        else this.currentFrame = 0
+            if(this.currentFrame < this.frameRate - 1) this.currentFrame++
+            else this.currentFrame = 0
+        }
     }
-    }
-    
 }
 
 class Hero extends Sprite
 {
-
     constructor(imageSrc, frameRate, animations, scale = 2)
     {
         super({imageSrc, frameRate, scale });
@@ -187,7 +187,6 @@ class Hero extends Sprite
             image.src = this.animations[key].imageSrc
             this.animations[key].image = image
         }
-
     }
 
     walk(speedchange)
@@ -229,8 +228,7 @@ class Hero extends Sprite
         }
         else if(!isPlayerdead)
         {
-
-            let mapX  = Math.floor((newPosX)/levelScale);
+            let mapX  = Math.floor((newPosX+16)/levelScale);
             let mapY  = Math.floor((newPosY+(2*levelScale))/levelScale);
             let mapX3 = Math.floor(((newPosX-16)+(1.8*levelScale))/levelScale);
 
@@ -246,18 +244,15 @@ class Hero extends Sprite
 
         this.x = newPosX;
         this.y = newPosY;
-        if (this.y > 544)
-        {
-            this.y = 544
-        }
+
         if(this.x > canvas.width)
         {
-            this.x -= canvas.width+50;
+            this.x -= canvas.width+this.width;
         }
 
         if(this.x < (0-this.width))
         {
-            this.x += canvas.width+50;
+            this.x += canvas.width+this.width;
         }
     }
 
@@ -273,7 +268,7 @@ class Hero extends Sprite
     {
         if(this.onGround)
         {
-            this.velocityX = this.velocityX - ((1/3)*this.velocityX);
+            this.velocityX *= (2/3);
             if(Math.abs(this.velocityX) < 0.1)
             {
                 this.velocityX = 0;
@@ -387,7 +382,7 @@ function keydown(event)
        event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE ||
        event.keyCode == KEY_R)
     {
-        keys[event.keyCode] = true;
+        keyDown[event.keyCode] = true;
     }
 
     if(musicStarted == false)
@@ -402,7 +397,7 @@ function keyup(event)
        event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE ||
        event.keyCode == KEY_R)
     {
-        keys[event.keyCode] = false;
+        keyDown[event.keyCode] = false;
         lastKeyUpCode = event.keyCode;
     }
 }
@@ -427,52 +422,47 @@ function restart_game()
     clearInterval(bonusInterval);
     bonusInterval = setInterval(bonus, 45000)
     extraFlag = false;
-    enemies.push(new Goblin("Myndir/EnemyP1Big.png", 1, animations = {
-        fullHealth: {imageSrc: "Myndir/EnemyP1Big.png",frameRate: 1},
-        halfHealth: {imageSrc: "Myndir/EnemyP2Big.png",frameRate: 1},
-    },1));
-    
-
+    lastEnemySpawn = get_timestamp()-ENEMY_SPAWN_INTERVAL;
 }
 
 function handle_keys()
 {
     if(isPlayerdead)
     {
-        if(keys[KEY_R] == true)
+        if(keyDown[KEY_R] == true)
         {
             restart_game();
         }
         return;
     }
 
-    if(keys[KEY_LEFT] == true)
+    if(keyDown[KEY_LEFT] == true)
     {
         hero.walk(-hero.speed);
         hero.switchSprite("walkLeft")
         heroWalk.play()
     }
 
-    if(keys[KEY_RIGHT] == true)
+    if(keyDown[KEY_RIGHT] == true)
     {
         hero.walk(hero.speed);
         hero.switchSprite("walkRight")
         heroWalk.play()
     }
 
-    if(keys[KEY_UP] == true)
+    if(keyDown[KEY_UP] == true)
     {
         hero.jump();
         heroWalk.pause()
     }
 
-    if(keys[KEY_SPACE] == true)
+    if(keyDown[KEY_SPACE] == true)
     {
         hero.shoot();
         hero.switchSprite("shoot")
     }
     
-    if (!keys[KEY_LEFT] && !keys[KEY_RIGHT] && !keys[KEY_UP] && !keys[KEY_SPACE])
+    if (!keyDown[KEY_LEFT] && !keyDown[KEY_RIGHT] && !keyDown[KEY_UP] && !keyDown[KEY_SPACE])
     {
         if (lastKeyUpCode == KEY_LEFT)
         {
@@ -495,6 +485,8 @@ function handle_keys()
 
 function get_map_collision(X, Y)
 {
+    if(Y == 19)
+        return true;
     if(X < 0 || X >= levelWidth)
         return false;
     if(Y < 0 || Y >= levelHeight)
@@ -566,7 +558,7 @@ function collision_consequence()
     }
 }
 
-function score_draw()
+function draw_score()
 {
     context.save();
     context.fillStyle = "black"
@@ -611,7 +603,7 @@ function enemies_move()
     }
 }
 
-function enemies_draw()
+function draw_enemies()
 {
     if(enemies.length > 0)
     {
@@ -648,7 +640,7 @@ function bullets_move(array)
     }
 }
 
-function bullets_draw(array)
+function draw_bullets(array)
 {
     if(array.length > 0)
     {
@@ -686,7 +678,6 @@ function player_dead()
 
 function draw_dead_message()
 {
-
     let deadMessage = "Game Over, Press R to restart. Score: ".concat(score.toString());
 
     context.save();
@@ -716,7 +707,6 @@ function draw_dead_message()
     context.fillText(deadMessage, canvas.width / 2, canvas.height / 2);
 
     context.restore();
-
 }
 
 function draw_life()
@@ -736,12 +726,13 @@ function draw_game()
 {
     draw_background();
     hero.draw();
-    enemies_draw();
+    draw_enemies();
     draw_life()
-    bullets_draw(hero_bullet);
-    bullets_draw(enemy_bullet);
-    score_draw()
+    draw_bullets(hero_bullet);
+    draw_bullets(enemy_bullet);
+    draw_score()
     draw_bonus()
+
     if(isPlayerdead)
     {
         draw_dead_message();
@@ -814,6 +805,7 @@ function initialize()
         shoot: {imageSrc: "Myndir/SHOOT_2x.png", frameRate: 2},
         dead: {imageSrc: "Myndir/DEAD_2x.png", frameRate: 2},
     },1 );
+
     runGame = setInterval(main_loop,1000/60)
     bonusInterval = setInterval(bonus, 45000)
 }
