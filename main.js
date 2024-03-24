@@ -1,4 +1,4 @@
-const DEBUG = true;
+const DEBUG = false;
 
 canvas = document.getElementById('mainCanvas');
 context = canvas.getContext('2d');
@@ -35,6 +35,7 @@ const musicTrack1 = new Audio();
 
 const backgroundImage = new Image()
 const heartImage = new Image();
+const heartBigImage = new Image();
 const brickTile = new Image();
 
 const levelWidth = 26;
@@ -538,7 +539,7 @@ function collision_consequence()
     }
 }
 
-function score_draw() 
+function score_draw()
 {
     context.save();
     context.fillStyle = "black"
@@ -693,13 +694,13 @@ function draw_dead_message()
 function draw_life()
 {
     const spacing = 10;
-    const X = 15
-    const Y = canvas.height - 40;
+    const X = 7
+    const Y = 7
 
     for (let i =0; i < hero.hitpoints; i++)
     {
-        life = X + (heartImage.width + spacing) * i
-        context.drawImage(heartImage, life, Y)
+        life = X + (heartBigImage.width + spacing) * i
+        context.drawImage(heartBigImage, life, Y)
     }
 }
 
@@ -773,6 +774,7 @@ function initialize()
     backgroundImage.src = "Myndir/Bar.jpg" // bara placeholder mögulega
     brickTile.src = "Myndir/tileBrick.png";
     heartImage.src = "Myndir/heart.png";
+    heartBigImage.src = "Myndir/heartBig.png";
 
     document.addEventListener("keydown",keydown);
     document.addEventListener("keyup",keyup);
