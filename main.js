@@ -10,6 +10,7 @@ const KEY_RIGHT = 39;
 const KEY_UP = 38;
 const KEY_DOWN = 40;
 const KEY_SPACE = 32;
+const KEY_R = 82;
 let lastKeyUpCode = null
 
 const backgroundImage = new Image()
@@ -64,7 +65,8 @@ function get_timestamp()
 function keydown(event)
 {
     if(event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT ||
-       event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE)
+       event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE ||
+       event.keyCode == KEY_R)
     {
         keys[event.keyCode] = true;
     }
@@ -74,11 +76,23 @@ function keydown(event)
 function keyup(event)
 {
     if(event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT ||
-       event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE)
+       event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE ||
+       event.keyCode == KEY_R)
     {
         keys[event.keyCode] = false;
         lastKeyUpCode = event.keyCode;
     }
+}
+
+function restart_game()
+{
+    hero.switchSprite("idleRight");
+    hero.x = canvas.width/2.3;
+    hero.y = canvas.height - 96;
+    hero.velocityX = 0;
+    hero.velocityY = 0;
+    hero.hitpoints = 3;
+    isPlayerdead = false;
 }
 
 //key virkni sem ég fann á netinu
@@ -86,6 +100,10 @@ function handle_keys()
 {
     if(isPlayerdead)
     {
+        if(keys[KEY_R] == true)
+        {
+            restart_game();
+        }
         return;
     }
 
@@ -511,11 +529,6 @@ function collision_consequence()
             }
         }  
     }
-}
-
-function player_dead() 
-{
-
 }
 
 function enemies_move()
