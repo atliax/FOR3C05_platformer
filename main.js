@@ -673,7 +673,7 @@ function player_dead()
 function draw_dead_message()
 {
 
-    let deadMessage = "Game Over, Press R to restart. Score: xxx";
+    let deadMessage = "Game Over, Press R to restart. Score: ".concat(score.toString());
 
     context.save();
 
