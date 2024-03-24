@@ -12,6 +12,7 @@ const KEY_RIGHT = 39;
 const KEY_UP = 38;
 const KEY_DOWN = 40;
 const KEY_SPACE = 32;
+const KEY_R = 82;
 let lastKeyUpCode = null
 
 const MAX_ENEMIES = 3;
@@ -69,7 +70,8 @@ function get_timestamp()
 function keydown(event)
 {
     if(event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT ||
-       event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE)
+       event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE ||
+       event.keyCode == KEY_R)
     {
         keys[event.keyCode] = true;
     }
@@ -79,7 +81,8 @@ function keydown(event)
 function keyup(event)
 {
     if(event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT ||
-       event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE)
+       event.keyCode == KEY_UP   || event.keyCode == KEY_SPACE ||
+       event.keyCode == KEY_R)
     {
         keys[event.keyCode] = false;
         lastKeyUpCode = event.keyCode;
@@ -104,6 +107,10 @@ function handle_keys()
 {
     if(isPlayerdead)
     {
+        if(keys[KEY_R] == true)
+        {
+            restart_game();
+        }
         return;
     }
 
