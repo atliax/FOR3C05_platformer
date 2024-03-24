@@ -283,7 +283,7 @@ class Hero extends Sprite
         {
             // engir árekstrar á uppleið
         }
-        else
+        else if(!isPlayerdead)
         {
             let mapX = Math.floor(newPosX/levelScale);
             let mapY = Math.floor((newPosY+(2*levelScale))/levelScale);
