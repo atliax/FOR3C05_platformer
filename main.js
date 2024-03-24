@@ -1,3 +1,5 @@
+const DEBUG = false;
+
 canvas = document.getElementById('mainCanvas');
 context = canvas.getContext('2d');
 addEventListener("load",initialize);
@@ -58,9 +60,6 @@ let levelData = [
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 ];
 
-//maxFPS = hve hraður leikurinn er. 
-//var lastTimestamp = 0, maxFPS = 60, timestep = 1000 / maxFPS;
-
 const keys = [];
 
 const enemies = [];
@@ -94,8 +93,13 @@ class Sprite
 
     draw() 
     {
-        context.fillStyle = "tan"
-        context.fillRect(this.x, this.y, this.width, this.height)
+        if(DEBUG)
+        {
+            context.save();
+            context.fillStyle = "tan"
+            context.fillRect(this.x, this.y, this.width, this.height)
+            context.restore();
+        }
         if (!this.image) return
 
         const cropbox = 
@@ -368,7 +372,6 @@ function keydown(event)
     }
 }
 
-//key virkni sem ég fann á netinu
 function keyup(event)
 {
     if(event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT ||
@@ -379,7 +382,6 @@ function keyup(event)
         lastKeyUpCode = event.keyCode;
     }
 }
-
 
 function restart_game()
 {
@@ -396,6 +398,9 @@ function restart_game()
     MAX_ENEMIES = 3;
     ENEMY_SPAWN_INTERVAL = 5000
     difficulty = 1000
+    hero_bullet.splice(0,hero_bullet.length);
+    enemy_bullet.splice(0,enemy_bullet.length);
+
 }
 
 function handle_keys()
@@ -718,19 +723,24 @@ function draw_game()
     {
         draw_dead_message();
     }
+
+    if(DEBUG)
+    {
+        context.save();
+        let locString = "".concat("X:",hero.x.toString(),", Y:",hero.y.toString());
+        context.fillStyle = "white";
+        context.fillText(locString,100,10);
     
-    let locString = "".concat("X:",hero.x.toString(),", Y:",hero.y.toString());
-    context.fillStyle = "white";
-    context.fillText(locString,100,10);
-
-    let velString = "".concat("velX:",(hero.velocityX).toString(),", velY:",(hero.velocityY).toString());
-    context.fillStyle = "white";
-    context.fillText(velString,100,20);
-
-    context.beginPath();
-    context.fillStyle = "pink";
-    context.arc(hero.x,hero.y,4,0,2*Math.PI);
-    context.fill();
+        let velString = "".concat("velX:",(hero.velocityX).toString(),", velY:",(hero.velocityY).toString());
+        context.fillStyle = "white";
+        context.fillText(velString,100,20);
+    
+        context.beginPath();
+        context.fillStyle = "pink";
+        context.arc(hero.x,hero.y,4,0,2*Math.PI);
+        context.fill();
+        context.restore();
+    }
 }
 
 function main_loop(timestamp)
