@@ -86,6 +86,23 @@ const hero_bullet = [];
 
 let hero;
 
+class HitBox
+{
+    constructor(X,Y,W,H)
+    {
+        this.X = X;
+        this.Y = Y;
+        this.W = W;
+        this.H = H;
+    }
+}
+
+const heroHitbox = new HitBox(12,0,32,64);
+const heroBulletHitbox = new HitBox(0,0,18,23);
+const enemyHitbox = new HitBox(0,0,64,45);
+const enemyBulletHitbox = new HitBox(2,2,29,28);
+const defaultHitbox = new HitBox(0,0,1,1);
+
 class Sprite 
 {
     constructor({imageSrc, frameRate, frameBuffer = 4, scale = 1})
@@ -107,6 +124,8 @@ class Sprite
         this.currentFrame = 0
         this.frameBuffer =  frameBuffer  // stjórnar hversu hratt sprite-ið skiptir um mynd
         this.elapsedFrames = 0
+
+        this.hitbox = defaultHitbox;
     }
 
     draw() 
@@ -114,8 +133,15 @@ class Sprite
         if(DEBUG)
         {
             context.save();
-            context.fillStyle = "tan"
-            context.fillRect(this.x, this.y, this.width, this.height)
+            //context.fillStyle = "tan"
+            //context.fillRect(this.x, this.y, this.width, this.height)
+
+            context.strokeStyle = "cyan";
+            context.lineWidth = 1;
+            context.beginPath();
+            context.rect(this.x+this.hitbox.X,this.y+this.hitbox.Y,this.hitbox.W,this.hitbox.H);
+            context.stroke();
+
             context.restore();
         }
 
@@ -167,7 +193,7 @@ class Sprite
 
 class Hero extends Sprite
 {
-    constructor(imageSrc, frameRate, animations, scale = 2)
+    constructor(imageSrc, frameRate, animations, scale = 2, hitbox)
     {
         super({imageSrc, frameRate, scale });
 
@@ -192,6 +218,8 @@ class Hero extends Sprite
             image.src = this.animations[key].imageSrc
             this.animations[key].image = image
         }
+
+        this.hitbox = hitbox;
     }
 
     walk(speedchange)
@@ -287,7 +315,7 @@ class Hero extends Sprite
         if(currentTime - this.lastshotTime > this.shootDelay)
         {
             const bullet_speed = -5;
-            const bullet = new Bullet("Myndir/heroBulletBig.png", 1, this.x+(this.width*0.5), this.y, bullet_speed);
+            const bullet = new Bullet("Myndir/heroBulletBig.png", 1, this.x+(this.width*0.5), this.y, bullet_speed, heroBulletHitbox);
             hero_bullet.push(bullet);
             this.lastshotTime = currentTime;
             heroShoot.play()
@@ -307,12 +335,13 @@ class Hero extends Sprite
 
 class Bullet extends Sprite
 {
-    constructor(imageSrc, frameRate, x, y, speed)
+    constructor(imageSrc, frameRate, x, y, speed, hitbox)
     {
         super({imageSrc, frameRate, scale: 1 })//scale: 2.3 })
         this.x = x;
         this.y = y;
         this.speed = speed;
+        this.hitbox = hitbox;
     }
 
     move()
@@ -323,7 +352,7 @@ class Bullet extends Sprite
 
 class Goblin extends Sprite
 {
-    constructor(imageSrc, frameRate, animations, scale = 2 )
+    constructor(imageSrc, frameRate, animations, scale = 2, hitbox )
     {
         super({imageSrc, frameRate, scale,})
         this.y = 60;
@@ -343,6 +372,7 @@ class Goblin extends Sprite
             image.src = this.animations[key].imageSrc
             this.animations[key].image = image
         }
+        this.hitbox = hitbox;
         numEnemies++;
     }
 
@@ -368,7 +398,7 @@ class Goblin extends Sprite
         if (document.hasFocus() && currentTime - this.lastshotTime > this.shootDelay)
         {
             const bullet_speed = 5;
-            const bullet = new Bullet("Myndir/enemyBulletsBig.png", 4,  this.x, this.y+this.height, bullet_speed);
+            const bullet = new Bullet("Myndir/enemyBulletsBig.png", 4,  this.x, this.y+this.height, bullet_speed,enemyBulletHitbox);
             enemy_bullet.push(bullet);
             this.lastshotTime = currentTime;
             goblinShoot.play()
@@ -509,15 +539,15 @@ function get_map_collision(X, Y)
 
 function check_collision(bullet, object)
 {
-    let bulletleft = bullet.x;
-    let bulletright = bullet.x + bullet.width;
-    let bullettop = bullet.y - bullet.height;
-    let bulletbot = bullet.y;
+    let bulletleft  = bullet.x + bullet.hitbox.X;
+    let bulletright = bullet.x + bullet.hitbox.X + bullet.hitbox.W;
+    let bullettop   = bullet.y + bullet.hitbox.Y;
+    let bulletbot   = bullet.y + bullet.hitbox.Y + bullet.hitbox.H;
 
-    let objectleft = object.x;
-    let objectright = object.x + object.width;
-    let objecttop = object.y;
-    let objectbot = object.y + object.height;
+    let objectleft  = object.x + object.hitbox.X;
+    let objectright = object.x + object.hitbox.X + object.hitbox.W;
+    let objecttop   = object.y + object.hitbox.Y;
+    let objectbot   = object.y + object.hitbox.Y + object.hitbox.H;
 
     if (bulletright > objectleft && 
         bulletleft < objectright &&
@@ -819,7 +849,7 @@ function initialize()
         walkLeft: {imageSrc: "Myndir/WALK_L_2x.png", frameRate: 4},
         shoot: {imageSrc: "Myndir/SHOOT_2x.png", frameRate: 2},
         dead: {imageSrc: "Myndir/DEAD_2x.png", frameRate: 2},
-    },1 );
+    },1, heroHitbox );
 
     runGame = setInterval(main_loop,1000/60)
     bonusInterval = setInterval(bonus, 45000)
@@ -837,7 +867,7 @@ function spawn_enemies()
         enemies.push(new Goblin("Myndir/EnemyP1Big.png", 1, animations = {
             fullHealth: {imageSrc: "Myndir/EnemyP1Big.png",frameRate: 1},
             halfHealth: {imageSrc: "Myndir/EnemyP2Big.png",frameRate: 1},
-        },1));
+        },1,enemyHitbox));
         lastEnemySpawn = get_timestamp();
     }
 }
