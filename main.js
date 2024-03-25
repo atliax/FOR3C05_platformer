@@ -1,64 +1,61 @@
+// þetta teiknar debug upplýsingar á skjáinn ef þetta er sett sem true
 const DEBUG = true;
+
+/*******************************************************************************
+*                            Hérna byrja galdrarnir                            *
+*******************************************************************************/
 
 canvas = document.getElementById('mainCanvas');
 context = canvas.getContext('2d');
+
+// fyrsta fallið sem keyrir eftir að síðan hleðst inn
 addEventListener("load",initialize);
 
-let runGame;
-let numEnemies;
-let isHeroDead;
+/*******************************************************************************
+*                                    Fastar                                    *
+*******************************************************************************/
 
-let musicStarted = false;
+// allir tímatengdir fastar og hlutir eru í millisekúndum
 
+// til að auðvelda læsileika í lyklaborðsföllum
+const KEY_SPACE = 32;
 const KEY_LEFT = 37;
 const KEY_RIGHT = 39;
 const KEY_UP = 38;
 const KEY_DOWN = 40;
-const KEY_SPACE = 32;
 const KEY_R = 82;
-let lastKeyUpCode = null
 
-const GRAVITY = 0.5;
+// stillingar leikmanns
+const HERO_GRAVITY = 0.5;
 const HERO_ACCELERATION = 0.5;
 const HERO_MAX_SPEED = 6;
-const HERO_GROUND_SPEED_MODIFIER = 0.25;
+const HERO_GROUND_SPEED_MODIFIER = 0.5;
 const HERO_JUMP_SPEED = 10;
-
 const HERO_BULLET_SPEED = -5;
-const ENEMY_BULLET_SPEED = 5;
+const HERO_SHOOT_DELAY = 600;
+const HERO_HITPOINTS = 3;
 
+// stillingar óvina
+const ENEMY_BULLET_SPEED = 5;
+const ENEMY_SPEED = 2;
+const ENEMY_BULLET_DELAY = 1000;
+const ENEMY_HITPOINTS = 2;
+const ENEMY_Y_SPAWN = 60;
+
+// upphafsstillingar á erfiðleika
 const DEFAULT_MAX_ENEMIES = 3;
 const DEFAULT_ENEMY_SPAWN_INTERVAL = 5000;
 const DEFAULT_DIFFICULTY = 1000;
 
-let maxEnemies = DEFAULT_MAX_ENEMIES;
-let enemySpawnInterval = DEFAULT_ENEMY_SPAWN_INTERVAL;
-let difficulty = DEFAULT_DIFFICULTY
-
-let lastEnemySpawn;
-
-const musicTrack1 = new Audio();
-const heroDead = new Audio(); heroDead.src = "Music/heroDead.mp4";
-const heroShoot = new Audio(); heroShoot.src ="Music/heroShoot.mp3"; heroShoot.volume = 0.4;
-const bulletHit = new Audio(); bulletHit.src = "Music/bulletHit.mp3";
-const goblinShoot = new Audio(); goblinShoot.src = "Music/goblinShoot.mp3"; goblinShoot.volume = 0.3;
-const heroDamage = new Audio(); heroDamage.src = "Music/heroDamage.wav";
-const heroWalk = new Audio(); heroWalk.src = "Music/walk.flac"; heroWalk.volume = 0.2;
-const heroJump = new Audio(); heroJump.src = "Music/jump.ogg"; heroJump.volume = 0.1
-
-const backgroundImage = new Image()
-const heartImage = new Image();
-const heartBigImage = new Image();
-const brickTile = new Image();
-
-let extraLife = [];
+// tími milli aukalífa
 const EXTRA_LIFE_INTERVAL = 45000;
-let lastExtraLife = 0;
 
+// stillingar á pöllunum í borðinu
 const LEVEL_WIDTH = 26;
 const LEVEL_HEIGHT = 20;
 const LEVEL_SCALE = 32;
 
+// gögnin fyrir pallana sjálfa
 const levelData = [
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -82,376 +79,162 @@ const levelData = [
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 ];
 
+/*******************************************************************************
+*                              Hljóð og myndskrár                              *
+*******************************************************************************/
+
+// tveir litlir wrapperar til að auðvelda skilgreiningarnar neðan við þá
+// þeir gera ekkert nema hlaða inn hljóði og myndum
+class AudioWrapper extends Audio
+{
+    constructor(src,volume = 1.0,loop = false)
+    {
+        super();
+        this.src = src;
+        this.volume = volume;
+        this.loop = loop;
+    }
+}
+class ImageWrapper extends Image
+{
+    constructor(src)
+    {
+        super();
+        this.src = src;
+    }
+}
+
+// tónlistin
+const audioMusicTrack = new AudioWrapper("Music/track1.mp3", 0.2, true);
+
+// effectarnir
+const audioHeroDead = new AudioWrapper("Music/heroDead.mp4");
+const audioHeroShoot = new AudioWrapper("Music/heroShoot.mp3", 0.4);
+const audioBulletHit = new AudioWrapper("Music/bulletHit.mp3");
+const audioGoblinShoot = new AudioWrapper("Music/goblinShoot.mp3", 0.3);
+const audioHeroDamage = new AudioWrapper("Music/heroDamage.wav");
+const audioHeroWalk = new AudioWrapper("Music/walk.flac",0.2);
+const audioHeroJump = new AudioWrapper("Music/jump.ogg",0.1);
+
+// bakgrunnsmynd
+const imageBackground = new ImageWrapper("Myndir/Bar.jpg");
+// aukalífsmynd
+const imageExtraLife = new ImageWrapper("Myndir/heart.png");
+// stóru hjörtun á notendaviðmótinu
+const imageGUILife = new ImageWrapper("Myndir/heartBig.png");
+// pallamynd
+const imageBrickTile = new ImageWrapper("Myndir/tileBrick.png");
+
+// myndir fyrir leikmann
+const imageHeroIdleLeft = new ImageWrapper("Myndir/IDLE_L_2x.png");
+const imageHeroIdleRight = new ImageWrapper("Myndir/IDLE_R_2x.png");
+const imageHeroWalkLeft = new ImageWrapper("Myndir/WALK_L_2x.png");
+const imageHeroWalkRight = new ImageWrapper("Myndir/WALK_R_2x.png");
+const imageHeroShoot = new ImageWrapper("Myndir/SHOOT_2x.png");
+const imageHeroDead = new ImageWrapper("Myndir/DEAD_2x.png");
+
+// myndir fyrir óvini
+const imageEnemyFullHealth = new ImageWrapper("Myndir/EnemyP1Big.png");
+const imageEnemyHalfHealth = new ImageWrapper("Myndir/EnemyP2Big.png");
+
+// myndir fyrir byssukúlur
+const imageEnemyBullet = new ImageWrapper("Myndir/enemyBulletsBig.png");
+const imageHeroBullet = new ImageWrapper("Myndir/heroBulletBig.png");
+
+// animation upplýsingar, skilgreina mynd og svo hversu margir rammar
+// af animation eru á viðkomandi mynd. Notað af Sprite klass til að
+// teikna hluti
+
+// leikmaður
+const heroAnimations = {
+    idleLeft: {image:imageHeroIdleLeft, frames: 2},
+    idleRight: {image: imageHeroIdleRight, frames: 2},
+    walkLeft: {image: imageHeroWalkLeft, frames: 4},
+    walkRight: {image: imageHeroWalkRight, frames: 4},
+    shoot: {image: imageHeroShoot, frames: 2},
+    dead: {image: imageHeroDead, frames: 2}
+};
+
+// óvinir
+const enemyAnimations = {
+    fullHealth: {image: imageEnemyFullHealth, frames: 1},
+    halfHealth: {image: imageEnemyHalfHealth, frames: 1}
+};
+
+// byssukúlur óvina
+const enemyBulletAnimations = {
+    main: {image: imageEnemyBullet, frames: 4}
+};
+
+// byssukúlur leikmanns
+const heroBulletAnimations = {
+    main: {image: imageHeroBullet, frames: 1}
+};
+
+// aukalíf
+const extraLifeAnimations = {
+    main: {image: imageExtraLife, frames: 1}
+};
+
+/*******************************************************************************
+*                                    Breytur                                   *
+*******************************************************************************/
+
+// geymir setInterval fyrir aðallykkju
+let runGame;
+
+// verður seinna eintak af Hero klassa
+let hero;
+
+// fjöldi óvina
+let numEnemies;
+
+// game over breyta
+let isHeroDead;
+
+// stig leikmanns
+let score;
+
+// skeiðklukkur, notaðar til að stýra tímasetningum á aukalífum og óvinum
+let lastExtraLife;
+let lastEnemySpawn;
+
+// erfiðleikastillingar, hámarksfjöldi óvina og tíminn á milli sköpunar þeirra
+let maxEnemies = DEFAULT_MAX_ENEMIES;
+let enemySpawnInterval = DEFAULT_ENEMY_SPAWN_INTERVAL;
+
+// erfiðleikastilling, þröskuldur fyrir stig þar sem erfiðleiki hækkar
+let difficulty = DEFAULT_DIFFICULTY;
+
+// geymir seinasta takka sem var sleppt til að velja hvaða mynd af leikmanni á að teikna
+let lastKeyUpCode = null;
+
+// ákvarðar hvort tónlistin hafi byrjað að spilast eða ekki
+let musicStarted = false;
+
+// árekstraboxin fyrir hlutina í leiknum
+let heroHitbox;
+let heroBulletHitbox;
+let enemyHitbox;
+let enemyBulletHitbox;
+let defaultHitbox;
+let extraLifeHitbox;
+
+// fylki af true/false eftir því hvaða takkar á lyklaborði eru niðri
 const keyDown = [];
 
+// fylki fyrir Sprite hlutina í leiknum
+const extraLife = [];
 const enemies = [];
-let score = 0
 const enemy_bullet = [];
 const hero_bullet = [];
 
-let hero;
+/*******************************************************************************
+*                               Atburðahlustarar                               *
+*******************************************************************************/
 
-const heroAnimations = {
-    idleLeft: {imageSrc: "Myndir/IDLE_L_2x.png", frameRate: 2},
-    idleRight: {imageSrc: "Myndir/IDLE_R_2x.png", frameRate: 2},
-    walkRight: {imageSrc: "Myndir/WALK_R_2x.png", frameRate: 4},
-    walkLeft: {imageSrc: "Myndir/WALK_L_2x.png", frameRate: 4},
-    shoot: {imageSrc: "Myndir/SHOOT_2x.png", frameRate: 2},
-    dead: {imageSrc: "Myndir/DEAD_2x.png", frameRate: 2}
-};
-
-const enemyAnimations = {
-    fullHealth: {imageSrc: "Myndir/EnemyP1Big.png",frameRate: 1},
-    halfHealth: {imageSrc: "Myndir/EnemyP2Big.png",frameRate: 1}
-};
-
-class HitBox
-{
-    constructor(X,Y,W,H)
-    {
-        this.X = X;
-        this.Y = Y;
-        this.W = W;
-        this.H = H;
-    }
-}
-
-const heroHitbox = new HitBox(12,0,32,64);
-const heroBulletHitbox = new HitBox(0,0,18,23);
-const enemyHitbox = new HitBox(0,0,64,45);
-const enemyBulletHitbox = new HitBox(2,2,29,28);
-const defaultHitbox = new HitBox(0,0,1,1);
-const extraLifeHitbox = new HitBox(0,0,23,22);
-
-class Sprite
-{
-    constructor({imageSrc, frameRate, frameBuffer = 4, scale = 1})
-    {
-        this.scale = scale
-        this.image = new Image()
-        this.frameRate = frameRate
-
-        this.image.onload = () => 
-        {
-            this.width = (this.image.width / frameRate) * this.scale
-            this.height = (this.image.height) * this.scale
-        }
-
-        this.image.src = imageSrc
-        
-        this.currentFrame = 0
-        this.frameBuffer =  frameBuffer  // stjórnar hversu hratt sprite-ið skiptir um mynd
-        this.elapsedFrames = 0
-
-        this.hitbox = defaultHitbox;
-    }
-
-    draw() 
-    {
-        if(DEBUG) // teiknar hitboxið
-        {
-            context.save();
-            context.strokeStyle = "cyan";
-            context.lineWidth = 1;
-            context.beginPath();
-            context.rect(this.x+this.hitbox.X,this.y+this.hitbox.Y,this.hitbox.W,this.hitbox.H);
-            context.stroke();
-            context.restore();
-        }
-
-        if (!this.image)
-            return
-
-        const cropbox = 
-        {
-            x: this.currentFrame* this.image.width / this.frameRate,
-            y: 0,
-            width: this.image.width / this.frameRate,  
-            height: this.image.height,
-        }
-
-        context.drawImage(
-            this.image,
-            cropbox.x,
-            cropbox.y,
-            cropbox.width,
-            cropbox.height,
-            this.x, 
-            this.y,
-            this.width ,
-            this.height,
-            );
-            this.animation()
-        
-    }
-
-    switchSprite(key) 
-    {
-        if (this.image === this.animations[key].image) return
-        this.image = this.animations[key].image
-        if (this.frameRate === this.animations[key].frameRate) return
-        this.frameRate = this.animations[key].frameRate
-    }
-
-    animation()
-    {
-        this.elapsedFrames++
-
-        if(this.elapsedFrames % this.frameBuffer === 0)
-        {
-            if(this.currentFrame < this.frameRate - 1) this.currentFrame++
-            else this.currentFrame = 0
-        }
-    }
-}
-
-class Hero extends Sprite
-{
-    constructor(imageSrc, frameRate, scale = 2, hitbox)
-    {
-        super({imageSrc, frameRate, scale });
-
-        this.speed = HERO_ACCELERATION;
-
-        this.x = canvas.width/2.3;
-        this.y = canvas.height - (3*LEVEL_SCALE);
-
-        this.groundSpeedModifier = HERO_GROUND_SPEED_MODIFIER;
-        this.maxSpeed = HERO_MAX_SPEED;
-
-        this.velocityX = 0;
-        this.velocityY = 0;
-        this.onGround = false;
-        this.shootDelay = 600;
-        this.lastshotTime = 0;
-        this.hitpoints = 3
-
-        this.animations = heroAnimations;
-
-        for (let key in this.animations) 
-        {
-            const image = new Image()
-            image.src = this.animations[key].imageSrc
-            this.animations[key].image = image
-        }
-
-        this.hitbox = hitbox;
-    }
-
-    walk(speedchange)
-    {
-        if(this.onGround)
-        {
-            if(speedchange > 0)
-            {
-                speedchange += this.groundSpeedModifier;
-            }
-            else
-            {
-                speedchange -= this.groundSpeedModifier;
-            }
-        }
-
-        this.velocityX += speedchange;
-
-        if(this.velocityX > this.maxSpeed)
-        {
-            this.velocityX = this.maxSpeed;
-        }
-
-        if(this.velocityX < 0 && this.velocityX < -this.maxSpeed)
-        {
-            this.velocityX = -this.maxSpeed;
-        }
-    }
-
-    move()
-    {
-        let newPosY = this.y + this.velocityY;
-        let newPosX = this.x + this.velocityX;
-
-        this.onGround = false;
-        if(this.velocityY <= 0)
-        {
-            // engir árekstrar á uppleið
-        }
-        else if(!isHeroDead)
-        {
-            let mapX  = Math.floor((newPosX+16)/LEVEL_SCALE);
-            let mapY  = Math.floor((newPosY+(2*LEVEL_SCALE))/LEVEL_SCALE);
-            let mapX3 = Math.floor(((newPosX-16)+(1.8*LEVEL_SCALE))/LEVEL_SCALE);
-
-
-            if(get_map_collision(mapX,mapY) ||
-               get_map_collision(mapX3,mapY))
-            {
-                newPosY = (Math.floor(newPosY/LEVEL_SCALE))*LEVEL_SCALE;
-                this.velocityY = 0;
-                this.onGround = true;
-            }
-        }
-
-        this.x = newPosX;
-        this.y = newPosY;
-
-        if(this.x > canvas.width)
-        {
-            this.x -= canvas.width+this.width;
-        }
-
-        if(this.x < (0-this.width))
-        {
-            this.x += canvas.width+this.width;
-        }
-    }
-
-    gravity()
-    {
-        if(!this.onGround)
-        {
-            this.velocityY += GRAVITY;
-        }
-    }
-
-    drag()
-    {
-        if(this.onGround)
-        {
-            this.velocityX *= (2/3);
-            if(Math.abs(this.velocityX) < 0.1)
-            {
-                this.velocityX = 0;
-            }
-        }
-    }
-
-    shoot()
-    {
-        const currentTime = new Date().getTime();
-        if(currentTime - this.lastshotTime > this.shootDelay)
-        {
-            const bullet = new HeroBullet(this.x+(this.width*0.5), this.y);
-            hero_bullet.push(bullet);
-            this.lastshotTime = currentTime;
-            heroShoot.play()
-        }
-    }
-
-    jump()
-    {
-        if(this.velocityY == 0 && this.onGround)
-        {
-            this.velocityY = -HERO_JUMP_SPEED;
-            this.onGround = false;
-            heroJump.play()
-        }
-    }
-}
-
-class Bullet extends Sprite
-{
-    constructor(imageSrc, frameRate, x, y, speed, hitbox)
-    {
-        super({imageSrc, frameRate, scale: 1 })
-        this.x = x;
-        this.y = y;
-        this.speed = speed;
-        this.hitbox = hitbox;
-    }
-
-    move()
-    {
-        this.y += this.speed;
-    }
-}
-
-class HeroBullet extends Bullet
-{
-    constructor(X,Y)
-    {
-        super("Myndir/heroBulletBig.png", 1, X, Y, HERO_BULLET_SPEED, heroBulletHitbox);
-    }
-}
-
-class EnemyBullet extends Bullet
-{
-    constructor(X,Y)
-    {
-        super("Myndir/enemyBulletsBig.png", 4, X, Y, ENEMY_BULLET_SPEED, enemyBulletHitbox);
-    }
-}
-
-class Goblin extends Sprite
-{
-    constructor(imageSrc, frameRate, scale = 2, hitbox )
-    {
-        super({imageSrc, frameRate, scale,})
-        this.y = 60;
-        this.width = 200;
-        this.x = Math.random()*(canvas.width-this.width);
-        this.height = 35;
-        this.speed = 2;
-        this.lastshotTime = 0;
-        this.shootDelay = 1000;
-        this.hitpoints = 2;
-
-        this.animations = enemyAnimations;
-
-        for (let key in this.animations) 
-        {
-            const image = new Image()
-            image.src = this.animations[key].imageSrc
-            this.animations[key].image = image
-        }
-        this.hitbox = hitbox;
-        numEnemies++;
-    }
-
-    move()
-    {
-        this.x += this.speed;
-
-        if (this.x+this.width >= canvas.width)
-        {
-            this.speed *= -1;
-        }
-
-        if (this.x+this.width <= this.width)
-        {
-            this.speed *= -1;
-        }
-    }
-
-    shoot()
-    {
-        const currentTime = new Date().getTime();
-
-        if (document.hasFocus() && currentTime - this.lastshotTime > this.shootDelay)
-        {
-            const bullet = new EnemyBullet(this.x,this.y+this.height);
-            enemy_bullet.push(bullet);
-            this.lastshotTime = currentTime;
-            goblinShoot.play()
-        }
-    }
-}
-
-class ExtraLife extends Sprite
-{
-    constructor(X,Y)
-    {
-        super({imageSrc:"Myndir/heart.png",frameRate:1,scale:1});
-        this.x = X;
-        this.y = Y;
-        this.hitbox = extraLifeHitbox;
-    }
-}
-
-function get_timestamp()
-{
-    return performance.timeOrigin + performance.now();
-}
-
+// keydown()
+// skráir niður lyklaborðstakka sem er ýtt niður
 function keydown(event)
 {
     if(event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT ||
@@ -461,12 +244,16 @@ function keydown(event)
         keyDown[event.keyCode] = true;
     }
 
+    // smá hack svo að browserinn leyfi okkur að spila bakgrunnstónlistina
     if(musicStarted == false)
     {
-        musicTrack1.play();
+        musicStarted = true;
+        audioMusicTrack.play();
     }
 }
 
+// keyup()
+// skráir niður lyklaborðstakka sem er sleppt
 function keyup(event)
 {
     if(event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT ||
@@ -478,38 +265,71 @@ function keyup(event)
     }
 }
 
-function restart_game()
+/*******************************************************************************
+*                                     Föll                                     *
+*******************************************************************************/
+
+// initialize()
+// Stillir hitt og þetta í upphafi keyrslu
+function initialize()
 {
-    hero.switchSprite("idleRight");
-    hero.x = canvas.width/2.3;
-    hero.y = canvas.height - 96;
-    hero.velocityX = 0;
-    hero.velocityY = 0;
-    hero.hitpoints = 3;
-    isHeroDead = false;
+    // stillum árekstraboxin fyrir hlutina í leiknum
+    heroHitbox = new Hitbox(12,0,32,64);
+    heroBulletHitbox = new Hitbox(0,0,18,23);
+    enemyHitbox = new Hitbox(0,0,64,45);
+    enemyBulletHitbox = new Hitbox(2,2,29,28);
+    defaultHitbox = new Hitbox(0,0,1,1);
+    extraLifeHitbox = new Hitbox(0,0,23,22);
 
-    hero_bullet.splice(0,hero_bullet.length);
-    enemy_bullet.splice(0,enemy_bullet.length);
-
-    enemies.splice(0,numEnemies);
-    numEnemies = 0;
+    // stofnum hetjuna okkar og núllstillum nokkra hluti
+    hero = new Hero();
     score = 0;
-
-    maxEnemies = DEFAULT_MAX_ENEMIES;
-    enemySpawnInterval = DEFAULT_ENEMY_SPAWN_INTERVAL;
-    difficulty = DEFAULT_DIFFICULTY;
-    lastEnemySpawn = get_timestamp()-enemySpawnInterval;
-
-    if(extraLife.length > 0)
-    {
-        extraLife.splice(0,1);
-    }
-
+    isHeroDead = false;
+    numEnemies = 0;
+    lastEnemySpawn = get_timestamp()-DEFAULT_ENEMY_SPAWN_INTERVAL;
     lastExtraLife = get_timestamp();
+
+    // virkjum lyklaborðshlustarana
+    document.addEventListener("keydown",keydown);
+    document.addEventListener("keyup",keyup);
+
+    // og setjum allt í gang - 1000/60 = 16.67ms, eða c.a. 60 lykkjur á sekúndu
+    runGame = setInterval(main_loop,1000/60);
 }
 
+// main_loop()
+// Keyrt aftur og aftur með setInterval()
+// Aðalvirkni leiksins fer fram hérna
+function main_loop()
+{
+    // fyrst kíkjum við á input atburði og bregðumst við þeim
+    handle_keys();
+
+    // breyta hlutum og stofna hluti eftir því hvað er að gerast í leiknum
+    adjust_difficulty();
+    spawn_enemies();
+    spawn_extra_life();
+    
+    // svo hreyfum við hlutina
+    hero.move();
+    enemies_move();
+    bullets_move(hero_bullet);
+    bullets_move(enemy_bullet);
+
+    // leyfum óvinunum að skjóta líka og bregðumst svo við því
+    enemies_shoot();
+    collision_consequence();
+
+    // og teiknum að lokum öll herlegheitin
+    draw_game();
+}
+
+// handle_keys()
+// kíkir á það hvaða takkar eru niðri á lyklaborðinu
+// og bregst við eftir því sem við á
 function handle_keys()
 {
+    // ef hetjan er dáin, þá skoðum við bara R takkann (sem byrjar nýjan leik)
     if(isHeroDead)
     {
         if(keyDown[KEY_R] == true)
@@ -522,158 +342,143 @@ function handle_keys()
     if(keyDown[KEY_LEFT] == true)
     {
         hero.walk(-hero.speed);
-        hero.switchSprite("walkLeft")
-        heroWalk.play()
+        hero.switch_sprite("walkLeft");
+        audioHeroWalk.play();
     }
 
     if(keyDown[KEY_RIGHT] == true)
     {
         hero.walk(hero.speed);
-        hero.switchSprite("walkRight")
-        heroWalk.play()
+        hero.switch_sprite("walkRight");
+        audioHeroWalk.play();
     }
 
     if(keyDown[KEY_UP] == true)
     {
         hero.jump();
-        heroWalk.pause()
+        audioHeroWalk.pause();
     }
 
     if(keyDown[KEY_SPACE] == true)
     {
         hero.shoot();
-        hero.switchSprite("shoot")
+        hero.switch_sprite("shoot");
     }
-    
-    if (!keyDown[KEY_LEFT] && !keyDown[KEY_RIGHT] && !keyDown[KEY_UP] && !keyDown[KEY_SPACE])
+
+    // ef enginn af tökkunum er niðri
+    if(!keyDown[KEY_LEFT] && !keyDown[KEY_RIGHT] && !keyDown[KEY_UP] && !keyDown[KEY_SPACE])
     {
-        if (lastKeyUpCode == KEY_LEFT)
+        // þá skiptum við um útlit á hetjunni eftir því hvaða takka var sleppt seinast
+        if(lastKeyUpCode == KEY_LEFT)
         {
-        hero.switchSprite("idleLeft")
+            hero.switch_sprite("idleLeft");
         }
-        if (lastKeyUpCode == KEY_RIGHT)
+
+        if(lastKeyUpCode == KEY_RIGHT)
         {
-        hero.switchSprite("idleRight")
+            hero.switch_sprite("idleRight");
         }
-        if (lastKeyUpCode == KEY_SPACE)
+
+        if(lastKeyUpCode == KEY_SPACE)
         {
-        hero.switchSprite("idleRight")
+            hero.switch_sprite("idleRight");
         }
-        if (lastKeyUpCode == KEY_UP)
+
+        if(lastKeyUpCode == KEY_UP)
         {
-        hero.switchSprite("idleLeft")
+            hero.switch_sprite("idleLeft");
         }
     }
 }
 
-function get_map_collision(X, Y)
+// restart_game()
+// byrjar nýjan leik
+function restart_game()
 {
-    if(Y == 19)
-        return true;
-    if(X < 0 || X >= LEVEL_WIDTH)
-        return false;
-    if(Y < 0 || Y >= LEVEL_HEIGHT)
-        return false;
+    // núllstillum leikmann
+    hero.switch_sprite("idleRight");
+    hero.x = canvas.width/2.3;
+    hero.y = canvas.height - 96;
+    hero.velocityX = 0;
+    hero.velocityY = 0;
+    hero.hitpoints = 3;
+    isHeroDead = false;
+    score = 0;
 
-    if(levelData[Y * LEVEL_WIDTH + X] != 0)
-        return true;
+    // eyðum öllum byssukúlum
+    hero_bullet.splice(0,hero_bullet.length);
+    enemy_bullet.splice(0,enemy_bullet.length);
 
-    return false;
-}
+    // eyðum öllum óvinum
+    enemies.splice(0,numEnemies);
+    numEnemies = 0;
 
-function check_collision(bullet, object)
-{
-    let bulletleft  = bullet.x + bullet.hitbox.X;
-    let bulletright = bullet.x + bullet.hitbox.X + bullet.hitbox.W;
-    let bullettop   = bullet.y + bullet.hitbox.Y;
-    let bulletbot   = bullet.y + bullet.hitbox.Y + bullet.hitbox.H;
+    // núllstillum erfiðleikann
+    maxEnemies = DEFAULT_MAX_ENEMIES;
+    enemySpawnInterval = DEFAULT_ENEMY_SPAWN_INTERVAL;
+    difficulty = DEFAULT_DIFFICULTY;
 
-    let objectleft  = object.x + object.hitbox.X;
-    let objectright = object.x + object.hitbox.X + object.hitbox.W;
-    let objecttop   = object.y + object.hitbox.Y;
-    let objectbot   = object.y + object.hitbox.Y + object.hitbox.H;
-
-    if (bulletright > objectleft && 
-        bulletleft < objectright &&
-        bulletbot > objecttop && 
-        bullettop < objectbot)
-    {
-        return true;
-    }
-
-    return false;
-}
-
-function collision_consequence()
-{
-    for (let i= 0; i < hero_bullet.length; i++)
-    {
-        for (let j = 0; j < enemies.length; j++)
-        {
-            if (check_collision(hero_bullet[i], enemies[j]))
-            {
-                hero_bullet.splice(i, 1);
-                enemies[j].hitpoints--;
-                enemies[j].switchSprite("halfHealth")
-                bulletHit.play()
-                if (enemies[j].hitpoints <= 0)
-                {
-                    numEnemies--;
-                    enemies.splice(j, 1);
-                    score += 100;
-                }
-            }
-        } 
-    }
-
-    for (let i= 0; i < enemy_bullet.length; i++)
-    {
-        if (check_collision(enemy_bullet[i], hero))
-        {
-            enemy_bullet.splice(i, 1);
-            hero.hitpoints--
-            heroDamage.play()
-            if (hero.hitpoints <= 0)
-            {
-                player_dead()
-            }
-        }  
-    }
-
+    // fjarlægjum aukalífið ef það er til staðar
     if(extraLife.length > 0)
     {
-        if(hero.hitpoints < 3)
-        {
-            if(check_collision(extraLife[0],hero))
-            {
-                extraLife.splice(0,1);
-                hero.hitpoints++;
-            }
-        }
+        extraLife.splice(0,1);
+    }
+
+    // núllstillum skeiðklukkur fyrir tímasetta atburði
+    lastEnemySpawn = get_timestamp()-enemySpawnInterval;
+    lastExtraLife = get_timestamp();
+}
+
+// adjust_difficulty()
+// stillir erfiðleikann á leiknum eftir stigum leikmanns
+function adjust_difficulty()
+{
+    // ef næsta erfiðleikaþröskuldi er náð
+    if(score >= difficulty)
+    {
+        // þá styttist tíminn á milli óvina
+        enemySpawnInterval -= 500;
+        difficulty += 1000;
+    }
+
+    // síðan er hámarksfjöldi óvina hækkaður eftir stigafjölda
+    if(score == 2000)
+    {
+        maxEnemies = 4;
+    }
+
+    if(score == 5000)
+    {
+        maxEnemies = 6;
+    }
+
+    if(score == 8000)
+    {
+        maxEnemies = 12;
     }
 }
 
-function draw_score()
+// spawn_enemies()
+// býr til nýja óvini ef það er pláss fyrir þá og ef það er kominn tími til þess
+function spawn_enemies()
 {
-    context.save();
-    context.fillStyle = "black"
-    context.fillRect(canvas.width -190, canvas.height - 35, 200, 35)
-    context.fillStyle = "lightblue"; 
-    context.font = "24px Serif";
-    context.fillText("score: "+score, canvas.width -170 , canvas.height - 10);
-    context.restore();
+    if(numEnemies >= maxEnemies)
+    {
+        return;
+    }
+
+    if(get_timestamp() - lastEnemySpawn > enemySpawnInterval)
+    {
+        enemies.push(new Goblin());
+        lastEnemySpawn = get_timestamp();
+    }
 }
 
-function adjust_difficulty()
-{
-    if (score >= difficulty){enemySpawnInterval -= 500, difficulty += 1000};
-    if (score === 2000) maxEnemies = 4
-    if (score === 5000) maxEnemies = 6
-    if (score === 8000) maxEnemies = 12
-}
-
+// spawn_extra_life()
+// býr til aukalíf uppi á pallinum ef það er kominn tími á það
 function spawn_extra_life()
 {
+    // og bara ef það er ekki þegar til staðar
     if(extraLife.length < 1)
     {
         if(get_timestamp() - lastExtraLife > EXTRA_LIFE_INTERVAL)
@@ -684,14 +489,8 @@ function spawn_extra_life()
     }
 }
 
-function draw_bonus()
-{
-    if(extraLife.length > 0)
-    {
-        extraLife[0].draw();
-    }
-}
-
+// enemies_move()
+// ... þarf að segja meira?
 function enemies_move()
 {
     if(enemies.length > 0)
@@ -703,28 +502,9 @@ function enemies_move()
     }
 }
 
-function draw_enemies()
-{
-    if(enemies.length > 0)
-    {
-        for (let i = 0; i < enemies.length; i++)
-        {
-            enemies[i].draw();
-        }
-    }
-}
-
-function enemies_shoot()
-{
-    if(enemies.length > 0)
-    {
-        for (let i = 0; i < enemies.length; i++)
-        {
-            enemies[i].shoot();
-        }
-    }
-}
-
+// bullets_move()
+// tekur við fylki af byssukúlum, hreyfir þær og eyðir
+// þeim svo ef þær eru komnar út fyrir skjáinn
 function bullets_move(array)
 {
     if(array.length > 0)
@@ -740,6 +520,223 @@ function bullets_move(array)
     }
 }
 
+// enemies_shoot()
+// ...
+function enemies_shoot()
+{
+    if(enemies.length > 0)
+    {
+        for (let i = 0; i < enemies.length; i++)
+        {
+            enemies[i].shoot();
+        }
+    }
+}
+
+// collision_consequence()
+// kíkir á árekstra á eftirfarandi:
+//   hero_bullet[] -> enemies[]
+//   enemy_bullet[] -> hero
+//   extra_life[] -> hero
+//
+// bregst við eftir þörfum með því að minnka líf,
+// drepa óvini, drepa leikmann eða gefa aukalíf
+function collision_consequence()
+{
+    for (let i= 0; i < hero_bullet.length; i++)
+    {
+        for (let j = 0; j < enemies.length; j++)
+        {
+            if (check_collision(hero_bullet[i], enemies[j]))
+            {
+                // hér hefur orðið árekstur á milli óvins og byssukúlu leikmanns
+                hero_bullet.splice(i, 1);
+
+                enemies[j].hitpoints--;
+                enemies[j].switch_sprite("halfHealth");
+
+                audioBulletHit.play();
+
+                if (enemies[j].hitpoints <= 0)
+                {
+                    numEnemies--;
+                    enemies.splice(j, 1);
+                    score += 100;
+                }
+            }
+        } 
+    }
+
+    for (let i= 0; i < enemy_bullet.length; i++)
+    {
+        if (check_collision(enemy_bullet[i], hero))
+        {
+            // hér hefur orðið árekstur á milli leikmanns og byssukúlu óvins
+            enemy_bullet.splice(i, 1);
+
+            hero.hitpoints--;
+
+            audioHeroDamage.play();
+
+            if (hero.hitpoints <= 0)
+            {
+                player_dead();
+            }
+        }  
+    }
+
+    if(extraLife.length > 0)
+    {
+        if(hero.hitpoints < 3)
+        {
+            if(check_collision(extraLife[0],hero))
+            {
+                // hér hefur orðið árekstur á milli leikmanns og aukalífs
+                extraLife.splice(0,1);
+                hero.hitpoints++;
+            }
+        }
+    }
+}
+
+// check_collision()
+// skoðar rectangle-rectangle árekstra á milli hluta
+//
+// báðir hlutirnir verða að vera afleiður af Sprite klassanum
+// eða a.m.k. að hafa viðeigandi gögn í sér til að fallið virki
+function check_collision(object1, object2)
+{
+    // skilgreinum fyrst X og Y hnit á hliðum ferhyrninganna
+    // þau hliðrast/breytast um hitbox sem objectið hefur
+    let object1left  = object1.x + object1.hitbox.X;
+    let object1right = object1.x + object1.hitbox.X + object1.hitbox.W;
+    let object1top   = object1.y + object1.hitbox.Y;
+    let object1bot   = object1.y + object1.hitbox.Y + object1.hitbox.H;
+
+    let object2left  = object2.x + object2.hitbox.X;
+    let object2right = object2.x + object2.hitbox.X + object2.hitbox.W;
+    let object2top   = object2.y + object2.hitbox.Y;
+    let object2bot   = object2.y + object2.hitbox.Y + object2.hitbox.H;
+
+    // hefðbundin rectangle-rectangle prófun með tölunum hér að ofan
+    if(object1right > object2left  &&
+        object1left < object2right &&
+         object1bot > object2top   &&
+         object1top < object2bot)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+// player_dead()
+// myrðir leikmann í köldu blóði
+function player_dead()
+{
+    hero.switch_sprite("dead");
+    isHeroDead = true;
+    audioHeroDead.play();
+}
+
+// draw_game()
+// teiknar það sem þarf að teikna
+function draw_game()
+{
+    // fyrst bakgrunn
+    draw_background();
+
+    // svo sprite
+    hero.draw();
+    draw_enemies();
+    draw_bullets(hero_bullet);
+    draw_bullets(enemy_bullet);
+    draw_bonus();
+
+    // svo notendaviðmót
+    draw_life();
+    draw_score();
+
+    if(isHeroDead)
+    {
+        draw_dead_message();
+    }
+
+    // og að lokum smá debug með staðsetningu leikmanns
+    if(DEBUG)
+    {
+        context.save();
+        let locString = "".concat("X:",hero.x.toString(),", Y:",hero.y.toString());
+        context.fillStyle = "white";
+        context.fillText(locString,100,10);
+    
+        let velString = "".concat("velX:",(hero.velocityX).toString(),", velY:",(hero.velocityY).toString());
+        context.fillStyle = "white";
+        context.fillText(velString,100,20);
+    
+        context.beginPath();
+        context.fillStyle = "pink";
+        context.arc(hero.x,hero.y,4,0,2*Math.PI);
+        context.fill();
+        context.restore();
+    }
+}
+
+// draw_background()
+// teiknar bakgrunnsmyndina og pallana í borðinu
+function draw_background()
+{
+    // bakgrunnsmynd
+    context.clearRect(0,0, canvas.width, canvas.height);
+    context.drawImage(imageBackground, 0,0 , canvas.width, canvas.height);
+
+    // pallar, fyrst línu fyrir línu
+    for(let y = 0; y < LEVEL_HEIGHT; y++)
+    {
+        // svo dálk fyrir dálk
+        for(let x = 0; x < LEVEL_WIDTH; x++)
+        {
+            let index = (y * LEVEL_WIDTH) + x;
+
+            // teiknum bara ef það er eitthvað
+            if(levelData[index] != 0)
+            {
+                context.drawImage(imageBrickTile,x*LEVEL_SCALE,y*LEVEL_SCALE);
+            }
+        }
+    }
+}
+
+// draw_enemies()
+// ...
+function draw_enemies()
+{
+    if(enemies.length > 0)
+    {
+        for (let i = 0; i < enemies.length; i++)
+        {
+            enemies[i].draw();
+        }
+    }
+}
+
+// draw_life()
+// teiknar líf leikmanns á notendaviðmótið
+function draw_life()
+{
+    const spacing = 10;
+    const X = 7;
+    const Y = 7;
+
+    for(let i = 0; i < hero.hitpoints; i++)
+    {
+        life = X + (imageGUILife.width + spacing) * i;
+        context.drawImage(imageGUILife, life, Y);
+    }
+}
+
+// draw_bullets()
+// tekur við fylki af byssukúlum og teiknar þær
 function draw_bullets(array)
 {
     if(array.length > 0)
@@ -751,31 +748,29 @@ function draw_bullets(array)
     }
 }
 
-function draw_background()
+// draw_score()
+// teiknar stig leikmanns á notendaviðmótið
+function draw_score()
 {
-    context.clearRect(0,0, canvas.width, canvas.height);
-    context.drawImage(backgroundImage, 0,0 , canvas.width, canvas.height);
-    for(let y = 0; y < LEVEL_HEIGHT; y++)
-    {
-        for(let x = 0; x < LEVEL_WIDTH; x++)
-        {
-            let index = (y * LEVEL_WIDTH) + x;
+    context.save();
+    context.fillStyle = "black"; 
+    context.font = "24px Serif";
+    context.fillText("score: "+score, canvas.width -190 , 30);
+    context.restore();
+}
 
-            if(levelData[index] != 0)
-            {
-                context.drawImage(brickTile,x*LEVEL_SCALE,y*LEVEL_SCALE);
-            }
-        }
+// draw_bonus()
+// teiknar aukalíf ef það er til staðar
+function draw_bonus()
+{
+    if(extraLife.length > 0)
+    {
+        extraLife[0].draw();
     }
 }
 
-function player_dead()
-{
-    hero.switchSprite("dead");
-    isHeroDead = true;
-    heroDead.play()
-}
-
+// draw_dead_message()
+// teiknar miðjusett textabox með game over skilaboðum og stigafjölda leikmanns
 function draw_dead_message()
 {
     let deadMessage = "Game Over, Press R to restart. Score: ".concat(score.toString());
@@ -809,113 +804,446 @@ function draw_dead_message()
     context.restore();
 }
 
-function draw_life()
+// get_map_collision()
+// athugar hvort gefinn reitur í borðinu sé solid eða ekki
+// við gerum ekki ráð fyrir götum þannig að allt sem er í neðstu línu er solid
+// auk þess er allt utan við lögleg gildi ekki solid
+function get_map_collision(X, Y)
 {
-    const spacing = 10;
-    const X = 7
-    const Y = 7
+    if(Y == LEVEL_HEIGHT-1)
+        return true;
+    if(X < 0 || X >= LEVEL_WIDTH)
+        return false;
+    if(Y < 0 || Y >= LEVEL_HEIGHT)
+        return false;
 
-    for (let i =0; i < hero.hitpoints; i++)
+    // hérna er loksins flett upp í levelData fylkinu
+    if(levelData[Y * LEVEL_WIDTH + X] != 0)
+        return true;
+
+    return false;
+}
+
+// get_timestamp()
+// skilar út tíma síðan 1. janúar 1970 í millisekúndum
+// notað fyrir skeiðklukkur
+function get_timestamp()
+{
+    return performance.timeOrigin + performance.now();
+}
+
+/*******************************************************************************
+*                                    Klassar                                   *
+*******************************************************************************/
+
+// Sprite
+// grunnklass á öllum hlutum í leiknum nema borðinu
+// sér um að teikna viðeigandi mynd eftir því hvaða ástand er á hlutnum
+//
+// það er ekki hægt að búa til eintak af þessum klassa, það verður að stofna
+// afleiðuklassa og gefa honum ýmsar upplýsingar eins og t.d. this.x og this.y
+class Sprite
+{
+    constructor(animations)
     {
-        life = X + (heartBigImage.width + spacing) * i
-        context.drawImage(heartBigImage, life, Y)
+        this.currentFrame = 0;
+        this.frameBuffer = 8;  // stjórnar hversu hratt sprite-ið skiptir um mynd
+        this.elapsedFrames = 0;
+
+        this.hitbox = defaultHitbox;
+
+        this.animations = animations;
+
+        // sækjum key á fyrsta animation
+        let loadedFirst = false;
+        let firstKey;
+        for(let key in this.animations) 
+        {
+            if(loadedFirst == false)
+            {
+                firstKey = key;
+                loadedFirst = true;
+                break;
+            }
+        }
+
+        // til að geta svo virkjað það hér
+        this.switch_sprite(firstKey);
+    }
+
+    draw()
+    {
+        if(DEBUG) // teiknar hitboxið
+        {
+            context.save();
+            context.strokeStyle = "cyan";
+            context.lineWidth = 1;
+            context.beginPath();
+            context.rect(this.x+this.hitbox.X,this.y+this.hitbox.Y,this.hitbox.W,this.hitbox.H);
+            context.stroke();
+            context.restore();
+        }
+
+        // skilgreinum hvaða svæði á myndinni við ætlum að teikna
+        // eftir því á hvaða animation frame við erum
+        const cropbox = 
+        {
+            x: this.currentFrame * this.image.width / this.frames,
+            y: 0,
+            width: this.image.width / this.frames,  
+            height: this.image.height
+        }
+
+        // og teiknum svo það svæði á skjáinn
+        context.drawImage(
+            this.image,
+            cropbox.x,
+            cropbox.y,
+            cropbox.width,
+            cropbox.height,
+            this.x, 
+            this.y,
+            this.width,
+            this.height);
+
+        // kíkjum svo á hvort það sé kominn tími á að skipta um frame
+        this.animate();
+        
+    }
+
+    switch_sprite(key) 
+    {
+        // ef myndin er þegar valin, þá þarf ekkert að gera
+        if(this.image === this.animations[key].image)
+        {
+            return;
+        }
+
+        // annars sækjum við rétta mynd
+        this.image = this.animations[key].image;
+        this.frames = this.animations[key].frames;
+
+        // og stillum breiddina okkar eftir því
+        this.width = this.image.width / this.frames;
+        this.height = this.image.height;
+
+        // byrjum svo upp á nýtt á viðkomandi animation
+        this.currentFrame = 0;
+        this.elapsedFrames = 0;
+    }
+
+    animate()
+    {
+        // teljum upp
+        this.elapsedFrames++;
+
+        // athugum hvort teljarinn hafi náð yfir frame buffer
+        if(this.elapsedFrames % this.frameBuffer === 0)
+        {
+            // og veljum næsta frame
+            if(this.currentFrame < this.frames - 1)
+            {
+                this.currentFrame++;
+            }
+            else// eða fyrsta ramma ef það er komið að því að fara í hring
+            {
+                this.currentFrame = 0;
+            }
+        }
     }
 }
 
-function draw_game()
+// Hero
+// leikmaðurinn
+class Hero extends Sprite
 {
-    draw_background();
-    hero.draw();
-    draw_enemies();
-    draw_life()
-    draw_bullets(hero_bullet);
-    draw_bullets(enemy_bullet);
-    draw_score()
-    draw_bonus()
-
-    if(isHeroDead)
+    constructor()
     {
-        draw_dead_message();
+        super(heroAnimations);
+
+        // upphafsstaðsetning leikmanns
+        this.x = canvas.width/2.3;
+        this.y = canvas.height - (3*LEVEL_SCALE);
+
+        this.speed = HERO_ACCELERATION;
+        this.groundSpeedModifier = HERO_GROUND_SPEED_MODIFIER;
+        this.maxSpeed = HERO_MAX_SPEED;
+
+        this.velocityX = 0;
+        this.velocityY = 0;
+
+        this.onGround = false;
+
+        this.shootDelay = HERO_SHOOT_DELAY;
+        this.lastshotTime = 0;
+
+        this.hitpoints = HERO_HITPOINTS;
+
+        this.hitbox = heroHitbox;
     }
 
-    if(DEBUG)
+    walk(speedchange)
     {
-        context.save();
-        let locString = "".concat("X:",hero.x.toString(),", Y:",hero.y.toString());
-        context.fillStyle = "white";
-        context.fillText(locString,100,10);
-    
-        let velString = "".concat("velX:",(hero.velocityX).toString(),", velY:",(hero.velocityY).toString());
-        context.fillStyle = "white";
-        context.fillText(velString,100,20);
-    
-        context.beginPath();
-        context.fillStyle = "pink";
-        context.arc(hero.x,hero.y,4,0,2*Math.PI);
-        context.fill();
-        context.restore();
+        // hækkum hraðan aðeins ef við erum á jörðinni
+        // svo að mótstaðan hægi ekki of mikið á okkur
+        if(this.onGround)
+        {
+            if(speedchange > 0)
+            {
+                speedchange += this.groundSpeedModifier;
+            }
+            else
+            {
+                speedchange -= this.groundSpeedModifier;
+            }
+        }
+
+        // hækkum/lækkum núverandi hraða
+        this.velocityX += speedchange;
+
+        // læsum honum svo í hámarkshraða
+        if(this.velocityX > this.maxSpeed)
+        {
+            this.velocityX = this.maxSpeed;
+        }
+
+        if(this.velocityX < 0 && this.velocityX < -this.maxSpeed)
+        {
+            this.velocityX = -this.maxSpeed;
+        }
+    }
+
+    jump()
+    {
+        // við getum bara stokkið af jörðinni og bara ef við erum ekki að detta
+        if(this.velocityY == 0 && this.onGround)
+        {
+            this.velocityY = -HERO_JUMP_SPEED;
+            this.onGround = false;
+            audioHeroJump.play();
+        }
+    }
+
+    shoot()
+    {
+        // athugum hvort nægur tími sé liðinn til að við megum skjóta
+        const currentTime = get_timestamp();
+        if(currentTime - this.lastshotTime > this.shootDelay)
+        {
+            // stillum X hnitið til eftir staðsetningu byssunnar
+            let shootX = this.x+(this.width*0.5)-10;
+
+            hero_bullet.push(new HeroBullet(shootX, this.y));
+            this.lastshotTime = currentTime;
+
+            audioHeroShoot.play();
+        }
+    }
+
+    move()
+    {
+        // smíðum tilvonandi staðsetningu
+        let newPosY = this.y + this.velocityY;
+        let newPosX = this.x + this.velocityX;
+
+        // við viljum ekki vera of jarðbundnir
+        // (annars getum við ekki gengið fram af pöllum)
+        this.onGround = false;
+
+        // kíkjum á árekstra við pallana í borðinu
+        if(this.velocityY <= 0)
+        {
+            // engir árekstrar á uppleið
+        }
+        else if(!isHeroDead) // engir árekstrar ef leikmaður er dáinn
+        {
+            // veljum okkur reiti úr borðinu til að skoða
+            let mapX  = Math.floor((newPosX+16)/LEVEL_SCALE);
+            let mapY  = Math.floor((newPosY+(2*LEVEL_SCALE))/LEVEL_SCALE);
+            let mapX2 = Math.floor(((newPosX-16)+(1.8*LEVEL_SCALE))/LEVEL_SCALE);
+
+            // athugum hvort þeir séu gegnheilir
+            if(get_map_collision(mapX,mapY) ||
+               get_map_collision(mapX2,mapY))
+            {
+                // þeir voru það þannig að við læsum staðsetningunni okkar á toppinn á viðkomandi reit
+                newPosY = (Math.floor(newPosY/LEVEL_SCALE))*LEVEL_SCALE;
+                // stöðvum Y hreyfingu
+                this.velocityY = 0;
+                // og komum okkur aftur niður á jörðina
+                this.onGround = true;
+            }
+        }
+
+        // staðsetning stillt að lokinni árekstraprófun
+        this.x = newPosX;
+        this.y = newPosY;
+
+        // næstu 2 if skipanir snúast um að flytja okkur yfir á "hinn" endann
+        // á skjánum ef við förum út fyrir jaðarinn á honum
+        if(this.x > canvas.width)
+        {
+            this.x -= canvas.width+this.width;
+        }
+        if(this.x < (0-this.width))
+        {
+            this.x += canvas.width+this.width;
+        }
+
+        // eiga við hraða leikmanns með þyngdarafli og núningi við jörðina
+        this.gravity();
+        this.drag();
+    }
+
+    gravity()
+    {
+        // sleppum þyngdarafli ef við erum á jörðinni
+        if(!this.onGround)
+        {
+            this.velocityY += HERO_GRAVITY;
+        }
+    }
+
+    drag()
+    {
+        // sleppum núningi ef við erum í loftinu
+        if(this.onGround)
+        {
+            this.velocityX *= (2/3);
+
+            // stoppum svo alveg ef hraðinn er kominn mjög lágt
+            if(Math.abs(this.velocityX) < 0.1)
+            {
+                this.velocityX = 0;
+            }
+        }
     }
 }
 
-function main_loop(timestamp)
+// Bullet
+// grunnklassi fyrir byssukúlur
+class Bullet extends Sprite
 {
-    handle_keys();
-
-    adjust_difficulty();
-
-    spawn_enemies();
-    spawn_extra_life();
-    
-    hero.move();
-    hero.gravity();
-    hero.drag();
-    
-    enemies_move();
-    bullets_move(hero_bullet);
-    bullets_move(enemy_bullet);
-    
-    enemies_shoot();
-
-    collision_consequence();
-
-    draw_game();
-}
-
-function initialize()
-{
-    isHeroDead = false;
-    numEnemies = 0;
-    lastEnemySpawn = 0;
-    extraFlag = false;
-
-    musicTrack1.src = "Music/track1.mp3";
-    musicTrack1.loop = true;
-    musicTrack1.volume = 0.2
-
-    backgroundImage.src = "Myndir/Bar.jpg" // bara placeholder mögulega
-    brickTile.src = "Myndir/tileBrick.png";
-    heartImage.src = "Myndir/heart.png";
-    heartBigImage.src = "Myndir/heartBig.png";
-
-    document.addEventListener("keydown",keydown);
-    document.addEventListener("keyup",keyup);
-
-    hero = new Hero("Myndir/IDLE_L_2x.png", 2, 1, heroHitbox );
-
-    runGame = setInterval(main_loop,1000/60)
-    lastExtraLife = get_timestamp();
-}
-
-function spawn_enemies()
-{
-    if(numEnemies >= maxEnemies)
+    constructor(X,Y,animations)
     {
-        return;
+        super(animations);
+
+        this.x = X;
+        this.y = Y;
     }
 
-    if(get_timestamp() - lastEnemySpawn > enemySpawnInterval)
+    move()
     {
-        enemies.push(new Goblin("Myndir/EnemyP1Big.png", 1, 1, enemyHitbox));
-        lastEnemySpawn = get_timestamp();
+        this.y += this.speed;
     }
 }
+
+// HeroBullet
+// byssukúlur leikmanns
+class HeroBullet extends Bullet
+{
+    constructor(X,Y)
+    {
+        super(X,Y,heroBulletAnimations);
+
+        this.speed = HERO_BULLET_SPEED;
+        this.hitbox = heroBulletHitbox;
+    }
+}
+
+// EnemyBullet
+// byssukúlur óvinanna
+class EnemyBullet extends Bullet
+{
+    constructor(X,Y)
+    {
+        super(X,Y,enemyBulletAnimations);
+
+        this.speed = ENEMY_BULLET_SPEED;
+        this.hitbox = enemyBulletHitbox;
+    }
+}
+
+// Goblin
+// óvinirnir sem hreyfast yfir skjáinn og skjóta niður
+class Goblin extends Sprite
+{
+    constructor()
+    {
+        super(enemyAnimations)
+
+        this.x = Math.random()*(canvas.width-this.width);
+        this.y = ENEMY_Y_SPAWN;
+
+        this.speed = ENEMY_SPEED;
+        this.shootDelay = ENEMY_BULLET_DELAY;
+
+        this.hitpoints = ENEMY_HITPOINTS;
+
+        this.lastshotTime = 0;
+
+        this.hitbox = enemyHitbox;
+
+        numEnemies++;
+    }
+
+    move()
+    {
+        // færum okkur til
+        this.x += this.speed;
+
+        // ef við erum komnir á endan á skjánum þá snýst hraðinn við
+        if (this.x+this.width >= canvas.width)
+        {
+            this.speed *= -1;
+        }
+
+        // sömuleiðis með hinn endan á skjánum
+        if (this.x+this.width <= this.width)
+        {
+            this.speed *= -1;
+        }
+    }
+
+    shoot()
+    {
+        // athugum hvort nægur tími sé liðinn til að við megum skjóta
+        const currentTime = get_timestamp();
+        if (document.hasFocus() && currentTime - this.lastshotTime > this.shootDelay)
+        {
+            enemy_bullet.push(new EnemyBullet(this.x,this.y+this.height));
+            this.lastshotTime = currentTime;
+
+            audioGoblinShoot.play();
+        }
+    }
+}
+
+// ExtraLife
+// aukalíf sem leikmaður getur náð í
+class ExtraLife extends Sprite
+{
+    constructor(X,Y)
+    {
+        super(extraLifeAnimations);
+        this.x = X;
+        this.y = Y;
+        this.hitbox = extraLifeHitbox;
+    }
+}
+
+// Hitbox
+// lítill klassi sem geymir upplýsingar um ferhyrning
+// notað fyrir árekstraprófanir
+class Hitbox
+{
+    constructor(X,Y,W,H)
+    {
+        this.X = X;
+        this.Y = Y;
+        this.W = W;
+        this.H = H;
+    }
+}
+
+/******************************************************************************/
