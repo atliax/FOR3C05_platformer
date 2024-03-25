@@ -600,6 +600,7 @@ function collision_consequence()
                 // hér hefur orðið árekstur á milli leikmanns og aukalífs
                 extraLife.splice(0,1);
                 hero.hitpoints++;
+                lastExtraLife = get_timestamp();
             }
         }
     }
