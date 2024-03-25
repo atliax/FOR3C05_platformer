@@ -250,6 +250,12 @@ function keydown(event)
         musicStarted = true;
         audioMusicTrack.play();
     }
+
+    // hindra space í að fara neðar á síðunni
+    if(event.keyCode == KEY_SPACE)
+    {
+        event.preventDefault();
+    }
 }
 
 // keyup()
