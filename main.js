@@ -1,5 +1,11 @@
 // þetta teiknar debug upplýsingar á skjáinn ef þetta er sett sem true
-const DEBUG = false;
+const DEBUG = true;
+
+// breytur sem geyma reitina sem Hero collision er að skoða
+// (til að geta teikna debug box á þeim)
+let mapTest1X = -1;
+let mapTestY = -1;
+let mapText2X = -1;
 
 /*******************************************************************************
 *                            Hérna byrja galdrarnir                            *
@@ -709,6 +715,17 @@ function draw_background()
             if(levelData[index] != 0)
             {
                 context.drawImage(imageBrickTile,x*LEVEL_SCALE,y*LEVEL_SCALE);
+
+                // debug box sem birtir reitina sem er verið að skoða í Hero collision
+                if(((mapTest1X == x || mapText2X == x) && mapTestY == y) && DEBUG)
+                {
+                    context.save();
+                    context.strokeStyle = "green";
+                    context.beginPath();
+                    context.rect(x*LEVEL_SCALE,y*LEVEL_SCALE,LEVEL_SCALE,LEVEL_SCALE);
+                    context.stroke();
+                    context.restore();
+                }
             }
         }
     }
@@ -1069,6 +1086,11 @@ class Hero extends Sprite
             let mapY  = Math.floor((newPosY+(2*LEVEL_SCALE))/LEVEL_SCALE);
             let mapX2 = Math.floor(((newPosX-16)+(1.8*LEVEL_SCALE))/LEVEL_SCALE);
 
+            // skrifum hjá okkur reitina til að geta birt debug box á þeim
+            mapTest1X = mapX;
+            mapTestY = mapY;
+            mapText2X = mapX2;
+            
             // athugum hvort þeir séu gegnheilir
             if(get_map_collision(mapX,mapY) ||
                get_map_collision(mapX2,mapY))
