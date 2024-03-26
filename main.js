@@ -1,5 +1,5 @@
 // þetta teiknar debug upplýsingar á skjáinn ef þetta er sett sem true
-const DEBUG = false;
+let debugInfo = false;
 
 // breytur sem geyma reitina sem Hero collision er að skoða
 // (til að geta teikna debug box á þeim)
@@ -676,7 +676,7 @@ function draw_game()
     }
 
     // og að lokum smá debug með staðsetningu leikmanns
-    if(DEBUG)
+    if(debugInfo)
     {
         context.save();
         let locString = "".concat("X:",hero.x.toString(),", Y:",hero.y.toString());
@@ -717,7 +717,7 @@ function draw_background()
                 context.drawImage(imageBrickTile,x*LEVEL_SCALE,y*LEVEL_SCALE);
 
                 // debug box sem birtir reitina sem er verið að skoða í Hero collision
-                if(((mapTest1X == x || mapText2X == x) && mapTestY == y) && DEBUG)
+                if(((mapTest1X == x || mapText2X == x) && mapTestY == y) && debugInfo)
                 {
                     context.save();
                     context.strokeStyle = "green";
@@ -897,7 +897,7 @@ class Sprite
 
     draw()
     {
-        if(DEBUG) // teiknar hitboxið
+        if(debugInfo) // teiknar hitboxið
         {
             context.save();
             context.strokeStyle = "cyan";
