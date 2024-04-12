@@ -1,5 +1,5 @@
 // þetta teiknar debug upplýsingar á skjáinn ef þetta er sett sem true
-let debugInfo = true;
+let debugInfo = false;
 
 // breytur sem geyma reitina sem Hero collision er að skoða
 // (til að geta teikna debug box á þeim)
